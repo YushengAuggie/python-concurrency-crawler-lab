@@ -20,7 +20,7 @@
 
 [https://yushengauggie.github.io/python-concurrency-crawler-lab/zh-CN.html](https://yushengauggie.github.io/python-concurrency-crawler-lab/zh-CN.html)
 
-网站包含并发时间线滑块、可视化图、代码片段与短自查题。仓库中可运行的 Python 文件仍是权威代码来源。
+网站包含可点击课程模块、站内代码阅读区、可视化图、并发/状态/可靠性实验与自查题。仓库中可运行的 Python 文件仍是权威代码来源。
 
 ## 快速开始 | Quick Start
 

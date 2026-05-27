@@ -18,7 +18,7 @@ Open the visual, interactive course site:
 
 [https://yushengauggie.github.io/python-concurrency-crawler-lab/](https://yushengauggie.github.io/python-concurrency-crawler-lab/)
 
-The website includes a concurrency timeline slider, visual diagrams, code excerpts, and short self-check questions. The runnable Python files in this repository remain the source of truth.
+The website includes clickable lesson modules, an in-page code studio, visual diagrams, concurrency/state/reliability labs, and self-check questions. The runnable Python files in this repository remain the source of truth.
 
 ## Quick Start
 
