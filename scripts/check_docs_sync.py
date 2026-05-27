@@ -1,4 +1,4 @@
-"""Check that the English and Chinese READMEs stay paired in pull requests."""
+"""Check that paired English and Chinese learning documents stay synchronized."""
 
 from argparse import ArgumentParser
 from pathlib import Path
@@ -6,16 +6,23 @@ import subprocess
 import sys
 
 
-README_ENGLISH = Path("README.md")
-README_CHINESE = Path("README.zh-CN.md")
+DOCUMENT_PAIRS = (
+    (Path("README.md"), Path("README.zh-CN.md")),
+    (Path("lessons/README.md"), Path("lessons/README.zh-CN.md")),
+    (Path("docs/index.html"), Path("docs/zh-CN.html")),
+)
 REQUIRED_LINK_TARGETS = {
-    README_ENGLISH: "(README.zh-CN.md)",
-    README_CHINESE: "(README.md)",
+    Path("README.md"): "(README.zh-CN.md)",
+    Path("README.zh-CN.md"): "(README.md)",
+    Path("lessons/README.md"): "(README.zh-CN.md)",
+    Path("lessons/README.zh-CN.md"): "(README.md)",
+    Path("docs/index.html"): 'href="zh-CN.html"',
+    Path("docs/zh-CN.html"): 'href="index.html"',
 }
 
 
 def check_language_links() -> list[str]:
-    """Return errors for missing README files or language-switch links."""
+    """Return errors for missing documents or language-switch links."""
     errors = []
     for readme_path, required_link_target in REQUIRED_LINK_TARGETS.items():
         if not readme_path.exists():
@@ -40,16 +47,18 @@ def changed_files_since(base_ref: str) -> set[str]:
 
 
 def check_paired_changes(base_ref: str) -> list[str]:
-    """Require both translated READMEs to change in the same pull request."""
+    """Require each translated document pair to change together."""
     changed_files = changed_files_since(base_ref)
-    english_changed = str(README_ENGLISH) in changed_files
-    chinese_changed = str(README_CHINESE) in changed_files
-    if english_changed != chinese_changed:
-        return [
-            "README.md and README.zh-CN.md must be updated together "
-            "when documentation content changes."
-        ]
-    return []
+    errors = []
+    for english_document, chinese_document in DOCUMENT_PAIRS:
+        english_changed = str(english_document) in changed_files
+        chinese_changed = str(chinese_document) in changed_files
+        if english_changed != chinese_changed:
+            errors.append(
+                f"{english_document} and {chinese_document} must be updated "
+                "together when their learning content changes."
+            )
+    return errors
 
 
 def main() -> int:

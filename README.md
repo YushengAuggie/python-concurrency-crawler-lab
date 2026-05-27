@@ -12,6 +12,14 @@ Learn Python concurrency through a small web crawler that is safe to run offline
 
 The project is deliberately small. It teaches the state and coordination ideas first, before adding real HTTP, retries, or production concerns.
 
+## Course Website
+
+Open the visual, interactive course site:
+
+[https://yushengauggie.github.io/python-concurrency-crawler-lab/](https://yushengauggie.github.io/python-concurrency-crawler-lab/)
+
+The website includes a concurrency timeline slider, visual diagrams, code excerpts, and short self-check questions. The runnable Python files in this repository remain the source of truth.
+
 ## Quick Start
 
 Requires Python 3.10+ and no third-party dependencies.
@@ -34,6 +42,9 @@ python-concurrency-crawler-lab/
 ├── async_crawler.py          # Asyncio crawler
 ├── compare_examples.py       # Runtime comparison
 ├── test_crawlers.py          # Behavior tests
+├── test_lessons.py           # Progressive lesson tests
+├── lessons/                  # Runnable timeout/retry/semaphore/cancellation lessons
+├── docs/                     # Static interactive GitHub Pages course site
 ├── scripts/check_docs_sync.py
 └── README.zh-CN.md           # Chinese translation
 ```
@@ -111,7 +122,7 @@ Fetching a page is I/O-bound work: most time is spent waiting for a response. Co
 | I/O-bound | Waiting for network dominates execution time. |
 | CPU-bound | Parsing or computation dominates execution time. |
 
-Threads and asyncio improve this example because requests spend time waiting. For heavy pure-Python CPU work, threads usually do not scale linearly because of the GIL; a process-based approach is often worth considering.
+Threads and asyncio improve this example because requests spend time waiting. On typical GIL-enabled CPython builds, threads usually do not scale pure-Python CPU work linearly; a process-based approach is often worth considering for heavy computation.
 
 ## 3. Thread Pool: Blocking APIs With Workers
 
@@ -216,17 +227,14 @@ Putting `requests.get()` directly inside `async def` does not make it asynchrono
 
 ## 6. Reliability Concepts To Learn Next
 
-The executable core keeps the first lesson focused: URL normalization, deduplication, success/failure state, and bounded in-flight requests. The next concepts are:
+The executable core keeps the first lesson focused: URL normalization, deduplication, success/failure state, and bounded in-flight requests. Continue with the runnable guide in [lessons/README.md](lessons/README.md):
 
-| Topic | Why it matters |
-| --- | --- |
-| Timeout | A slow request must not occupy capacity forever. |
-| Exception propagation | Background failures must be observed. |
-| Cancellation | Stopping a crawl should clean up outstanding tasks. |
-| Retry with backoff | Temporary failures need controlled recovery. |
-| Rate limiting | Available concurrency is not permission to overload a site. |
-| Page/depth limit | Active-request limits do not bound total crawl growth. |
-| `robots.txt` and `User-Agent` | Real crawlers should behave responsibly. |
+| Lesson | Runnable command | Why it matters |
+| --- | --- | --- |
+| Timeout | `python3 -m lessons.lesson_timeout` | A slow request must not occupy capacity forever. |
+| Retry with backoff | `python3 -m lessons.lesson_retry` | Temporary failures need controlled recovery. |
+| Semaphore | `python3 -m lessons.lesson_semaphore` | Scheduled tasks should not activate unlimited requests. |
+| Cancellation | `python3 -m lessons.lesson_cancellation` | Stopping work should collect outstanding tasks cleanly. |
 
 For Python 3.10, an async timeout exercise can start with:
 
@@ -236,6 +244,8 @@ html_content = await asyncio.wait_for(get_html_content_async(url), timeout=1.0)
 
 For Python 3.11+, `asyncio.timeout()` offers a context-manager alternative.
 
+After these runnable lessons, extend the crawler with a maximum-page limit and then study rate limiting, `robots.txt`, and an identifying `User-Agent` before adapting it to real websites.
+
 ## Learning Path
 
 1. Run the three implementations and the tests.
@@ -244,7 +254,8 @@ For Python 3.11+, `asyncio.timeout()` offers a context-manager alternative.
 4. Trace `Future`, `wait(FIRST_COMPLETED)`, and the protected check-and-enqueue update.
 5. Change `max_concurrency` in the asyncio crawler and trace how `Task` objects yield at `await`.
 6. Temporarily replace `await asyncio.sleep()` with `time.sleep()` in the async fetcher and explain the performance change.
-7. Add one small reliability extension: timeout, failed-page retry, or a maximum-page limit.
+7. Work through [lessons/README.md](lessons/README.md), completing the self-check after each runnable example.
+8. Add a maximum-page limit to connect active-request control with total crawl-size control.
 
 ## Knowledge Check
 
@@ -257,6 +268,13 @@ For Python 3.11+, `asyncio.timeout()` offers a context-manager alternative.
 - What does the concurrency limit bound, and what does it leave unbounded?
 - When would timeout, cancellation, rate limiting, or a page limit become necessary?
 
+## Official References
+
+- [`asyncio` overview](https://docs.python.org/3.10/library/asyncio.html)
+- [Coroutines, Tasks, `wait_for()`, cancellation, and `wait()`](https://docs.python.org/3.10/library/asyncio-task.html)
+- [Asyncio synchronization primitives including `Semaphore`](https://docs.python.org/3.10/library/asyncio-sync.html)
+- [`concurrent.futures`, `Future`, and `ThreadPoolExecutor`](https://docs.python.org/3.10/library/concurrent.futures.html)
+
 ## Documentation Languages
 
-The English and Chinese READMEs are maintained together. A GitHub Actions check fails a pull request if only one language version is modified or if the language-switch links are removed. When changing concepts, diagrams, commands, or examples, update both files in the same pull request.
+The English and Chinese main guides, progressive lesson guides, and website pages are maintained together. A GitHub Actions check fails a pull request if only one language version in a pair is modified or if language-switch links are removed. When changing concepts, diagrams, commands, or examples, update both language versions in the same pull request.

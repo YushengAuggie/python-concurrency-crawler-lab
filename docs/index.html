@@ -1,0 +1,187 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Python Concurrency Crawler Lab</title>
+    <meta name="description" content="Learn threads and asyncio through an offline web crawler.">
+    <link rel="stylesheet" href="assets/styles.css">
+    <script defer src="assets/app.js"></script>
+  </head>
+  <body>
+    <header class="shell topbar">
+      <a class="brand" href="#">Python Concurrency Crawler Lab</a>
+      <nav class="nav">
+        <a href="#path">Lessons</a>
+        <a href="#interactive">Interactive Lab</a>
+        <a href="#check">Self-Check</a>
+        <a href="https://github.com/YushengAuggie/python-concurrency-crawler-lab">GitHub</a>
+        <a class="lang" href="zh-CN.html">简体中文</a>
+      </nav>
+    </header>
+    <main>
+      <section class="shell hero">
+        <div>
+          <div class="eyebrow">Offline, runnable, progressive</div>
+          <h1>Learn async by crawling a tiny web.</h1>
+          <p class="lede">Start with breadth-first search, compare threads with asyncio, then practice timeout, retry, semaphores, and cancellation through focused examples.</p>
+          <div class="buttons">
+            <a class="button primary" href="#path">Start learning</a>
+            <a class="button" href="https://github.com/YushengAuggie/python-concurrency-crawler-lab">View code</a>
+          </div>
+        </div>
+        <div class="site-map" aria-label="Five-page example website graph">
+          <svg viewBox="0 0 400 286" aria-hidden="true">
+            <line x1="200" y1="55" x2="92" y2="143"></line>
+            <line x1="200" y1="55" x2="306" y2="143"></line>
+            <line x1="90" y1="154" x2="86" y2="238"></line>
+            <line x1="310" y1="154" x2="303" y2="238"></line>
+            <line x1="91" y1="239" x2="302" y2="239"></line>
+            <line class="cycle" x1="79" y1="142" x2="179" y2="63"></line>
+            <line class="cycle" x1="293" y1="235" x2="108" y2="151"></line>
+            <line class="duplicate" x1="191" y1="63" x2="97" y2="133"></line>
+            <line class="filtered" x1="220" y1="49" x2="332" y2="50"></line>
+          </svg>
+          <span class="node home">/</span>
+          <span class="node tutorial">/tutorial</span>
+          <span class="node reference">/reference</span>
+          <span class="node basic">/examples/basic</span>
+          <span class="node concurrent">/examples/concurrent</span>
+          <span class="node external">external filtered</span>
+          <p class="caption">A deterministic website with cycles, duplicates, and filtered links.</p>
+        </div>
+      </section>
+
+      <section class="section" id="path">
+        <div class="shell">
+          <div class="eyebrow">Learning path</div>
+          <h2>One idea at a time.</h2>
+          <p class="section-intro">Run the core examples first, then open each follow-up lesson. Every lesson has a visible experiment and a self-check before moving on.</p>
+          <p><a class="button" href="https://github.com/YushengAuggie/python-concurrency-crawler-lab/blob/main/lessons/README.md">Open the complete lesson guide</a></p>
+          <div class="cards">
+            <article class="card">
+              <div class="tag">Foundation</div>
+              <h3>BFS and state</h3>
+              <p>Understand queues, URL deduplication, fetched pages, and failed pages before introducing concurrency.</p>
+            </article>
+            <article class="card">
+              <div class="tag">Compare</div>
+              <h3>Threads vs asyncio</h3>
+              <p>See how blocking worker threads differ from tasks that yield to an event loop.</p>
+            </article>
+            <article class="card">
+              <div class="tag">Reliability</div>
+              <h3>Bound and clean up work</h3>
+              <p>Practice timeout, retry, semaphores, and cancellation with tiny runnable files.</p>
+            </article>
+          </div>
+        </div>
+      </section>
+
+      <section class="section">
+        <div class="shell">
+          <div class="eyebrow">Runnable lessons</div>
+          <h2>Progressive examples</h2>
+          <div class="steps">
+            <details open>
+              <summary>Lesson 0: Core crawler comparison</summary>
+              <div class="lesson-body">
+                <p>Run all three crawler models on the same offline website.</p>
+                <pre><code>python3 compare_examples.py
+python3 -m unittest -v</code></pre>
+                <p><strong>Self-check:</strong> Why can concurrent completion order differ from sequential BFS order?</p>
+              </div>
+            </details>
+            <details>
+              <summary>Lesson 1: Timeout</summary>
+              <div class="lesson-body">
+                <pre><code>python3 -m lessons.lesson_timeout
+
+return await asyncio.wait_for(
+    get_html_content_async(url),
+    timeout=timeout_seconds,
+)</code></pre>
+                <p><strong>Self-check:</strong> Why does non-blocking waiting still require a timeout?</p>
+              </div>
+            </details>
+            <details>
+              <summary>Lesson 2: Retry with backoff</summary>
+              <div class="lesson-body">
+                <pre><code>python3 -m lessons.lesson_retry
+
+delay_seconds = base_delay_seconds * (2 ** (attempt_number - 1))</code></pre>
+                <p><strong>Self-check:</strong> Which failures should not be retried?</p>
+              </div>
+            </details>
+            <details>
+              <summary>Lesson 3: Semaphore</summary>
+              <div class="lesson-body">
+                <pre><code>python3 -m lessons.lesson_semaphore
+
+async with semaphore:
+    await fetch_page()</code></pre>
+                <p><strong>Self-check:</strong> What does an active-request limit leave unbounded?</p>
+              </div>
+            </details>
+            <details>
+              <summary>Lesson 4: Cancellation</summary>
+              <div class="lesson-body">
+                <pre><code>python3 -m lessons.lesson_cancellation
+
+task.cancel()
+await asyncio.gather(task, return_exceptions=True)</code></pre>
+                <p><strong>Self-check:</strong> Why should cancelled tasks still be awaited?</p>
+              </div>
+            </details>
+          </div>
+        </div>
+      </section>
+
+      <section class="section" id="interactive">
+        <div class="shell">
+          <div class="eyebrow">Interactive lab</div>
+          <h2>Independent requests: overlap waiting time.</h2>
+          <p class="section-intro">This small illustration models requests that are already known, not crawler link discovery. Move the limit: requests do not become individually faster; more waits can overlap.</p>
+          <div class="timeline-lab" data-slot-label="slot" data-page-label="Page" data-time-label="time units">
+            <label class="control">
+              Active request limit:
+              <input id="concurrency" type="range" min="1" max="5" value="2">
+              <strong id="concurrency-value">2</strong>
+            </label>
+            <div class="timeline" id="timeline" aria-live="polite"></div>
+            <p>Total simulated time: <span class="metric" id="elapsed"></span></p>
+          </div>
+        </div>
+      </section>
+
+      <section class="section" id="check">
+        <div class="shell">
+          <div class="eyebrow">Self-check</div>
+          <h2>Can you predict the behavior?</h2>
+          <p class="section-intro">Answer before opening the code again. Correct explanations matter more than memorizing syntax.</p>
+          <div class="quiz-grid">
+            <article class="quiz" data-success="Correct. The event loop must remain free to advance other tasks." data-retry="Try again: focus on what blocks the event loop.">
+              <p>Why not call <code>requests.get()</code> directly inside <code>async def</code>?</p>
+              <div class="choices">
+                <button class="choice" data-correct="true">It is blocking and stalls the event loop.</button>
+                <button class="choice" data-correct="false">Async code cannot return HTML text.</button>
+              </div>
+              <div class="feedback"></div>
+            </article>
+            <article class="quiz" data-success="Correct. A separate page/depth limit is needed for total growth." data-retry="Try again: in-flight work and discovered work are different states.">
+              <p>What does <code>max_concurrency=2</code> limit?</p>
+              <div class="choices">
+                <button class="choice" data-correct="false">The total pages the crawler can discover.</button>
+                <button class="choice" data-correct="true">The active asynchronous fetch operations.</button>
+              </div>
+              <div class="feedback"></div>
+            </article>
+          </div>
+        </div>
+      </section>
+    </main>
+    <footer>
+      <div class="shell">Python Concurrency Crawler Lab. The course runs entirely offline; the repository examples are the source of truth.</div>
+    </footer>
+  </body>
+</html>

@@ -1,0 +1,187 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Python 并发爬虫学习实验室</title>
+    <meta name="description" content="通过离线网页爬虫学习线程池与 asyncio。">
+    <link rel="stylesheet" href="assets/styles.css">
+    <script defer src="assets/app.js"></script>
+  </head>
+  <body>
+    <header class="shell topbar">
+      <a class="brand" href="#">Python Concurrency Crawler Lab</a>
+      <nav class="nav">
+        <a href="#path">课程</a>
+        <a href="#interactive">互动实验</a>
+        <a href="#check">自查</a>
+        <a href="https://github.com/YushengAuggie/python-concurrency-crawler-lab">GitHub</a>
+        <a class="lang" href="index.html">English</a>
+      </nav>
+    </header>
+    <main>
+      <section class="shell hero">
+        <div>
+          <div class="eyebrow">离线运行 · 逐步学习 · 可动手修改</div>
+          <h1>用一个小爬虫学懂异步。</h1>
+          <p class="lede">从广度优先搜索开始，对比线程与 asyncio，再通过聚焦的例子练习 timeout、retry、semaphore 和 cancellation。</p>
+          <div class="buttons">
+            <a class="button primary" href="#path">开始学习</a>
+            <a class="button" href="https://github.com/YushengAuggie/python-concurrency-crawler-lab">查看代码</a>
+          </div>
+        </div>
+        <div class="site-map" aria-label="五个页面的示例网站图">
+          <svg viewBox="0 0 400 286" aria-hidden="true">
+            <line x1="200" y1="55" x2="92" y2="143"></line>
+            <line x1="200" y1="55" x2="306" y2="143"></line>
+            <line x1="90" y1="154" x2="86" y2="238"></line>
+            <line x1="310" y1="154" x2="303" y2="238"></line>
+            <line x1="91" y1="239" x2="302" y2="239"></line>
+            <line class="cycle" x1="79" y1="142" x2="179" y2="63"></line>
+            <line class="cycle" x1="293" y1="235" x2="108" y2="151"></line>
+            <line class="duplicate" x1="191" y1="63" x2="97" y2="133"></line>
+            <line class="filtered" x1="220" y1="49" x2="332" y2="50"></line>
+          </svg>
+          <span class="node home">/</span>
+          <span class="node tutorial">/tutorial</span>
+          <span class="node reference">/reference</span>
+          <span class="node basic">/examples/basic</span>
+          <span class="node concurrent">/examples/concurrent</span>
+          <span class="node external">外链已过滤</span>
+          <p class="caption">一个包含环路、重复链接与过滤链接的确定性网站。</p>
+        </div>
+      </section>
+
+      <section class="section" id="path">
+        <div class="shell">
+          <div class="eyebrow">学习路线</div>
+          <h2>一次只学习一个概念。</h2>
+          <p class="section-intro">先运行核心比较，再逐课打开进阶例子。每一课都包含可观察实验和进入下一步之前的自查。</p>
+          <p><a class="button" href="https://github.com/YushengAuggie/python-concurrency-crawler-lab/blob/main/lessons/README.zh-CN.md">打开完整课程指南</a></p>
+          <div class="cards">
+            <article class="card">
+              <div class="tag">基础</div>
+              <h3>BFS 与状态</h3>
+              <p>在加入并发前，先理解队列、URL 去重、成功页面与失败页面。</p>
+            </article>
+            <article class="card">
+              <div class="tag">比较</div>
+              <h3>Threads 与 asyncio</h3>
+              <p>观察阻塞式 worker thread 与让出控制权的 event loop task 有何差别。</p>
+            </article>
+            <article class="card">
+              <div class="tag">可靠性</div>
+              <h3>约束并清理工作</h3>
+              <p>通过小脚本练习超时、重试、信号量与取消任务。</p>
+            </article>
+          </div>
+        </div>
+      </section>
+
+      <section class="section">
+        <div class="shell">
+          <div class="eyebrow">可运行课程</div>
+          <h2>循序渐进的例子</h2>
+          <div class="steps">
+            <details open>
+              <summary>Lesson 0：核心 crawler 对比</summary>
+              <div class="lesson-body">
+                <p>让三种 crawler model 抓取同一个离线网站。</p>
+                <pre><code>python3 compare_examples.py
+python3 -m unittest -v</code></pre>
+                <p><strong>自查：</strong>为什么并发完成顺序可能与顺序 BFS 不同？</p>
+              </div>
+            </details>
+            <details>
+              <summary>Lesson 1：Timeout</summary>
+              <div class="lesson-body">
+                <pre><code>python3 -m lessons.lesson_timeout
+
+return await asyncio.wait_for(
+    get_html_content_async(url),
+    timeout=timeout_seconds,
+)</code></pre>
+                <p><strong>自查：</strong>为什么 non-blocking wait 仍然需要 timeout？</p>
+              </div>
+            </details>
+            <details>
+              <summary>Lesson 2：Retry with backoff</summary>
+              <div class="lesson-body">
+                <pre><code>python3 -m lessons.lesson_retry
+
+delay_seconds = base_delay_seconds * (2 ** (attempt_number - 1))</code></pre>
+                <p><strong>自查：</strong>哪些失败不应该 retry？</p>
+              </div>
+            </details>
+            <details>
+              <summary>Lesson 3：Semaphore</summary>
+              <div class="lesson-body">
+                <pre><code>python3 -m lessons.lesson_semaphore
+
+async with semaphore:
+    await fetch_page()</code></pre>
+                <p><strong>自查：</strong>限制活跃请求后，什么增长仍然没有被限制？</p>
+              </div>
+            </details>
+            <details>
+              <summary>Lesson 4：Cancellation</summary>
+              <div class="lesson-body">
+                <pre><code>python3 -m lessons.lesson_cancellation
+
+task.cancel()
+await asyncio.gather(task, return_exceptions=True)</code></pre>
+                <p><strong>自查：</strong>为什么 cancelled tasks 仍应被 await？</p>
+              </div>
+            </details>
+          </div>
+        </div>
+      </section>
+
+      <section class="section" id="interactive">
+        <div class="shell">
+          <div class="eyebrow">互动实验</div>
+          <h2>独立请求：让等待时间重叠。</h2>
+          <p class="section-intro">这个小图模拟的是已经知道的独立请求，并非 crawler 动态发现链接的流程。拖动限制：每个请求本身没有变快，但更多等待可以互相重叠。</p>
+          <div class="timeline-lab" data-slot-label="槽位" data-page-label="页面" data-time-label="个时间单位">
+            <label class="control">
+              活跃请求上限：
+              <input id="concurrency" type="range" min="1" max="5" value="2">
+              <strong id="concurrency-value">2</strong>
+            </label>
+            <div class="timeline" id="timeline" aria-live="polite"></div>
+            <p>模拟总耗时：<span class="metric" id="elapsed"></span></p>
+          </div>
+        </div>
+      </section>
+
+      <section class="section" id="check">
+        <div class="shell">
+          <div class="eyebrow">自查</div>
+          <h2>你能预测行为吗？</h2>
+          <p class="section-intro">先回答，再回去查看代码。能够解释原因，比记住语法更重要。</p>
+          <div class="quiz-grid">
+            <article class="quiz" data-success="正确。Event loop 必须能够继续推进其他 tasks。" data-retry="再想一下：关注什么会阻塞 event loop。">
+              <p>为什么不能在 <code>async def</code> 中直接调用 <code>requests.get()</code>？</p>
+              <div class="choices">
+                <button class="choice" data-correct="true">它会阻塞并卡住 event loop。</button>
+                <button class="choice" data-correct="false">异步代码不能返回 HTML 文本。</button>
+              </div>
+              <div class="feedback"></div>
+            </article>
+            <article class="quiz" data-success="正确。限制总增长还需要单独的页面数或深度限制。" data-retry="再想一下：在途工作和已发现工作是不同状态。">
+              <p><code>max_concurrency=2</code> 限制的是什么？</p>
+              <div class="choices">
+                <button class="choice" data-correct="false">Crawler 最多能发现的总页面数。</button>
+                <button class="choice" data-correct="true">同时活跃的异步抓取操作。</button>
+              </div>
+              <div class="feedback"></div>
+            </article>
+          </div>
+        </div>
+      </section>
+    </main>
+    <footer>
+      <div class="shell">Python Concurrency Crawler Lab。课程完全离线运行，仓库中的 Python 示例是权威代码来源。</div>
+    </footer>
+  </body>
+</html>

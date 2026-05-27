@@ -15,5 +15,5 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Verify bilingual README updates
+      - name: Verify bilingual documentation updates
         run: python3 scripts/check_docs_sync.py --base-ref "${{ github.event.pull_request.base.sha }}"
