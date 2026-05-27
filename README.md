@@ -197,17 +197,17 @@ done_tasks, pending_tasks = await asyncio.wait(
 
 ```mermaid
 sequenceDiagram
-    participant Loop as Event Loop
+    participant EL as Event Loop
     participant A as Task: /tutorial
     participant B as Task: /reference
-    Loop->>A: run until await
-    A-->>Loop: wait for response
-    Loop->>B: run until await
-    B-->>Loop: wait for response
-    B->>Loop: response is ready
-    Loop->>Loop: queue new links
-    A->>Loop: response is ready
-    Loop->>Loop: schedule more work
+    EL->>A: run until await
+    A-->>EL: wait for response
+    EL->>B: run until await
+    B-->>EL: wait for response
+    B->>EL: response is ready
+    EL->>EL: queue new links
+    A->>EL: response is ready
+    EL->>EL: schedule more work
 ```
 
 An asyncio `Task` plays a role similar to a thread-pool `Future`: it represents scheduled work and exposes completion or failure. The difference is that the tasks here advance on one event loop thread rather than executing blocking fetches in worker threads.

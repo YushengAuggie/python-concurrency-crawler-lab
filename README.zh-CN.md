@@ -199,17 +199,17 @@ done_tasks, pending_tasks = await asyncio.wait(
 
 ```mermaid
 sequenceDiagram
-    participant Loop as Event Loop
+    participant EL as Event Loop
     participant A as Task: /tutorial
     participant B as Task: /reference
-    Loop->>A: run until await
-    A-->>Loop: wait for response
-    Loop->>B: run until await
-    B-->>Loop: wait for response
-    B->>Loop: response is ready
-    Loop->>Loop: queue new links
-    A->>Loop: response is ready
-    Loop->>Loop: schedule more work
+    EL->>A: run until await
+    A-->>EL: wait for response
+    EL->>B: run until await
+    B-->>EL: wait for response
+    B->>EL: response is ready
+    EL->>EL: queue new links
+    A->>EL: response is ready
+    EL->>EL: schedule more work
 ```
 
 Asyncio 的 `Task` 与 thread-pool 的 `Future` 作用相似：都表示已经安排的工作，并暴露完成或失败状态。区别在于，此处的 tasks 在一个 event loop thread 上推进，而不是在线程池中执行阻塞抓取。
