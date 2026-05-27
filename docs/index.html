@@ -6,6 +6,7 @@
     <title>Python Concurrency Crawler Lab</title>
     <meta name="description" content="Learn threads and asyncio through an offline web crawler.">
     <link rel="stylesheet" href="assets/styles.css">
+    <script defer src="assets/source-files.js"></script>
     <script defer src="assets/app.js"></script>
   </head>
   <body>
@@ -68,11 +69,17 @@
               <p>Understand queues, URL deduplication, fetched pages, and failed pages before introducing concurrency.</p>
               <span class="card-action">Start this module &rarr;</span>
             </a>
-            <a class="card" href="#lesson-models">
-              <div class="tag">Compare</div>
-              <h3>Threads vs asyncio</h3>
-              <p>See how blocking worker threads differ from tasks that yield to an event loop.</p>
-              <span class="card-action">Compare models &rarr;</span>
+            <a class="card" href="#lesson-threadpool">
+              <div class="tag">Threads</div>
+              <h3>Future and worker pools</h3>
+              <p>Use blocking fetch code safely by handing a bounded amount of work to worker threads.</p>
+              <span class="card-action">Study thread pools &rarr;</span>
+            </a>
+            <a class="card" href="#lesson-asyncio">
+              <div class="tag">Asyncio</div>
+              <h3>Task and event loop</h3>
+              <p>See how coroutines yield at <code>await</code> so one event loop can coordinate many waits.</p>
+              <span class="card-action">Study asyncio &rarr;</span>
             </a>
             <a class="card" href="#lesson-reliability">
               <div class="tag">Reliability</div>
@@ -82,6 +89,9 @@
             </a>
           </div>
           <nav class="lesson-shortcuts" aria-label="Reliability lesson shortcuts">
+            <a href="#lesson-threadpool">Thread pool</a>
+            <a href="#lesson-asyncio">Asyncio</a>
+            <a href="#lesson-reliability">Timeout</a>
             <a href="#lesson-retry">Retry</a>
             <a href="#lesson-semaphore">Semaphore</a>
             <a href="#lesson-cancellation">Cancellation</a>
@@ -113,34 +123,59 @@
                     <p>Run the baseline and predict the fetch order before reading the output.</p>
                     <pre><code>python3 synchronous_crawlers.py
 python3 -m unittest -v test_crawlers</code></pre>
+                    <p><a class="small-button" href="#source-browser" data-source-target="synchronous_crawlers.py" data-source-highlight="34-40">Open the sequential run loop</a></p>
                   </div>
                 </div>
                 <p class="challenge"><strong>Check yourself:</strong> Why must a URL be marked discovered when it is queued, rather than only after fetching it?</p>
               </div>
             </details>
-            <details id="lesson-models">
-              <summary><span class="lesson-number">01</span> Futures, tasks, and waiting for progress</summary>
+            <details id="lesson-threadpool">
+              <summary><span class="lesson-number">01</span> Thread pool, Future, and waiting for progress</summary>
               <div class="lesson-body">
                 <div class="lesson-grid">
                   <div>
-                    <div class="tag">Compare</div>
-                    <p>A thread pool runs blocking fetch functions in worker threads and returns <code>Future</code> handles. Asyncio schedules <code>Task</code> objects that yield at <code>await</code>.</p>
-                    <p>Both versions keep bounded in-flight work and react when the first operation completes.</p>
+                    <div class="tag">Learn</div>
+                    <p>A thread pool runs blocking fetch functions in worker threads. <code>submit()</code> returns a <code>Future</code>, which is a handle to work that may still be running.</p>
+                    <p>The crawler stores pending futures so it knows what is in flight, waits for the first one to finish, calls <code>result()</code> to observe failures, then submits more URLs.</p>
                   </div>
                   <div>
                     <div class="tag">Run</div>
                     <pre><code>python3 compare_examples.py
 
-# Find the matching ideas:
-wait(..., FIRST_COMPLETED)
+# Read:
+ThreadPoolWebCrawler.run()
+wait(..., FIRST_COMPLETED)</code></pre>
+                    <p><a class="small-button" href="#source-browser" data-source-target="synchronous_crawlers.py" data-source-highlight="76-108">Open the Future/wait loop</a></p>
+                  </div>
+                </div>
+                <p class="challenge"><strong>Check yourself:</strong> Why does the crawler submit only up to the available worker slots instead of submitting every discovered URL immediately?</p>
+              </div>
+            </details>
+            <details id="lesson-asyncio">
+              <summary><span class="lesson-number">02</span> Asyncio Task, await, and the event loop</summary>
+              <div class="lesson-body">
+                <div class="lesson-grid">
+                  <div>
+                    <div class="tag">Learn</div>
+                    <p>Asyncio schedules <code>Task</code> objects on one event loop thread. A task pauses at <code>await</code>, leaving the loop free to advance other tasks while a simulated request waits.</p>
+                    <p>The async crawler owns shared state in one coordinator method, so completed tasks return links and the coordinator updates the queue without a thread lock.</p>
+                  </div>
+                  <div>
+                    <div class="tag">Run</div>
+                    <pre><code>python3 async_crawler.py
+python3 compare_examples.py
+
+# Read:
+AsyncWebCrawler.run()
 asyncio.wait(..., FIRST_COMPLETED)</code></pre>
+                    <p><a class="small-button" href="#source-browser" data-source-target="async_crawler.py" data-source-highlight="31-65">Open the asyncio run loop</a></p>
                   </div>
                 </div>
                 <p class="challenge"><strong>Check yourself:</strong> Why can completion order differ from sequential BFS order, even if every reachable URL is still found?</p>
               </div>
             </details>
             <details id="lesson-reliability">
-              <summary><span class="lesson-number">02</span> Timeout: bound how long waiting may occupy capacity</summary>
+              <summary><span class="lesson-number">03</span> Timeout: bound how long waiting may occupy capacity</summary>
               <div class="lesson-body">
                 <div class="lesson-grid">
                   <div>
@@ -155,13 +190,14 @@ return await asyncio.wait_for(
     get_html_content_async(url),
     timeout=timeout_seconds,
 )</code></pre>
+                    <p><a class="small-button" href="#source-browser" data-source-target="lessons/lesson_timeout.py" data-source-highlight="11-19">Open timeout source</a></p>
                   </div>
                 </div>
-                <p class="challenge"><strong>Experiment:</strong> Lower the timeout below the simulated page delay. What result should the crawler record?</p>
+                <p class="challenge"><strong>Experiment:</strong> Lower the timeout below the simulated page delay. What result should <code>fetch_with_timeout()</code> return?</p>
               </div>
             </details>
             <details id="lesson-retry">
-              <summary><span class="lesson-number">03</span> Retry with backoff: recover without hammering</summary>
+              <summary><span class="lesson-number">04</span> Retry with backoff: recover without hammering</summary>
               <div class="lesson-body">
                 <div class="lesson-grid">
                   <div>
@@ -175,13 +211,14 @@ return await asyncio.wait_for(
 delay_seconds = base_delay_seconds * (
     2 ** (attempt_number - 1)
 )</code></pre>
+                    <p><a class="small-button" href="#source-browser" data-source-target="lessons/lesson_retry.py" data-source-highlight="24-47">Open retry source</a></p>
                   </div>
                 </div>
                 <p class="challenge"><strong>Check yourself:</strong> Why should a malformed URL or permission failure generally not be retried?</p>
               </div>
             </details>
             <details id="lesson-semaphore">
-              <summary><span class="lesson-number">04</span> Semaphore: bound active asynchronous requests</summary>
+              <summary><span class="lesson-number">05</span> Semaphore: bound active asynchronous requests</summary>
               <div class="lesson-body">
                 <div class="lesson-grid">
                   <div>
@@ -194,13 +231,14 @@ delay_seconds = base_delay_seconds * (
 
 async with semaphore:
     await fetch_page()</code></pre>
+                    <p><a class="small-button" href="#source-browser" data-source-target="lessons/lesson_semaphore.py" data-source-highlight="22-37">Open semaphore source</a></p>
                   </div>
                 </div>
                 <p class="challenge"><strong>Check yourself:</strong> What separate limit would stop a huge website from growing the crawl frontier?</p>
               </div>
             </details>
             <details id="lesson-cancellation">
-              <summary><span class="lesson-number">05</span> Cancellation: stop and collect outstanding tasks</summary>
+              <summary><span class="lesson-number">06</span> Cancellation: stop and collect outstanding tasks</summary>
               <div class="lesson-body">
                 <div class="lesson-grid">
                   <div>
@@ -215,6 +253,7 @@ task.cancel()
 await asyncio.gather(
     task, return_exceptions=True
 )</code></pre>
+                    <p><a class="small-button" href="#source-browser" data-source-target="lessons/lesson_cancellation.py" data-source-highlight="22-37">Open cancellation source</a></p>
                   </div>
                 </div>
                 <p class="challenge"><strong>Check yourself:</strong> Why is creating tasks without later awaiting or cancelling them risky?</p>
@@ -228,7 +267,7 @@ await asyncio.gather(
         <div class="shell">
           <div class="eyebrow">Code Studio</div>
           <h2>Read the important parts without leaving the lesson.</h2>
-          <p class="section-intro">Switch files to connect each concept with the actual runnable implementation. The repository remains available for the full source and experiments.</p>
+          <p class="section-intro">Start with the annotated excerpts, then open the full runnable source directly on this page. GitHub is optional, not the next required step.</p>
           <div class="code-studio">
             <div class="code-tabs" role="tablist" aria-label="Crawler source excerpts">
               <button class="code-tab active" id="tab-shared" data-code-target="shared" role="tab" aria-controls="panel-shared" aria-selected="true" tabindex="0">shared.py</button>
@@ -269,7 +308,32 @@ done_tasks, pending_tasks = await asyncio.wait(
 for task in done_tasks:
     url, discovered_links = task.result()</code></pre>
             </article>
-            <a class="source-link" href="https://github.com/YushengAuggie/python-concurrency-crawler-lab">Open complete source on GitHub &rarr;</a>
+            <a class="source-link" href="#source-browser">Open complete source below &darr;</a>
+          </div>
+          <div class="source-browser" id="source-browser">
+            <div class="source-browser-header">
+              <div>
+                <div class="tag">Full source reader</div>
+                <h3>Read complete files in place.</h3>
+                <p id="source-meta"></p>
+              </div>
+              <label class="source-picker">
+                Choose a file
+                <select id="source-file-select" data-missing="Source payload is missing. Run python3 scripts/generate_site_sources.py." data-meta="{file} · {lines} lines">
+                  <option value="shared.py" data-highlight="55-79,93-113" data-focus="Focus: the offline website, blocking fetch, async fetch, and link normalization.">shared.py</option>
+                  <option value="synchronous_crawlers.py" data-highlight="34-40,68-108" data-focus="Focus: SequentialWebCrawler, ThreadPoolWebCrawler, Future, wait(), and the lock-protected state update.">synchronous_crawlers.py</option>
+                  <option value="async_crawler.py" data-highlight="22-65" data-focus="Focus: AsyncWebCrawler, create_task(), asyncio.wait(), and coordinator-owned state.">async_crawler.py</option>
+                  <option value="compare_examples.py" data-highlight="10-42" data-focus="Focus: measuring the same crawl through sequential, threaded, and asyncio implementations.">compare_examples.py</option>
+                  <option value="lessons/lesson_timeout.py" data-highlight="11-19" data-focus="Focus: bounding one await with wait_for().">lessons/lesson_timeout.py</option>
+                  <option value="lessons/lesson_retry.py" data-highlight="24-47" data-focus="Focus: retrying temporary failures with exponential backoff.">lessons/lesson_retry.py</option>
+                  <option value="lessons/lesson_semaphore.py" data-highlight="22-37" data-focus="Focus: limiting active async work with a semaphore.">lessons/lesson_semaphore.py</option>
+                  <option value="lessons/lesson_cancellation.py" data-highlight="22-37" data-focus="Focus: cancelling tasks and awaiting cleanup.">lessons/lesson_cancellation.py</option>
+                </select>
+              </label>
+            </div>
+            <p class="code-note" id="source-focus"></p>
+            <pre class="source-pre"><code id="source-code"></code></pre>
+            <a class="source-link" id="source-github-link" href="https://github.com/YushengAuggie/python-concurrency-crawler-lab">Open this file on GitHub &rarr;</a>
           </div>
         </div>
       </section>
@@ -284,7 +348,7 @@ for task in done_tasks:
               <div class="tag">Lab 1 · Capacity</div>
               <h3>Overlap waiting time</h3>
               <p>Requests are already known here. Raising the limit overlaps waits; it does not make one page faster.</p>
-              <div class="timeline-lab" data-slot-label="slot" data-page-label="Page" data-time-label="time units">
+              <div class="timeline-lab" data-slot-label="slot" data-page-label="Page" data-time-label="time units" data-insight="With {concurrency} active request slot(s), these five known waits finish in {total} time units. Predict this number before moving the slider again.">
                 <label class="control">
                   Active request limit:
                   <input id="concurrency" type="range" min="1" max="5" value="2">
@@ -292,13 +356,15 @@ for task in done_tasks:
                 </label>
                 <div class="timeline" id="timeline" aria-live="polite"></div>
                 <p>Total simulated time: <span class="metric" id="elapsed"></span></p>
+                <p class="micro-note" id="timeline-insight"></p>
               </div>
             </article>
             <article class="lab-card" id="state-lab">
               <div class="tag">Lab 2 · State</div>
               <h3>Step through a crawl</h3>
-              <p>Using two request slots, advance one event and watch queued, running, and fetched URLs change.</p>
-              <div class="state-board" data-initial="The home page is queued. Submit it to begin." data-finished="All discovered pages have finished; the crawler can stop." data-event-1="Submitted / as the first in-flight request." data-event-2="Completed / and discovered two new same-site links." data-event-3="Submitted /tutorial and /reference together because two slots are available." data-event-4="Completed /reference first; two example pages enter the queue." data-event-5="Immediately submitted /examples/basic into the freed slot while /tutorial is still running." data-event-6="Completed /tutorial and /examples/basic; duplicate and already-discovered links add no new work." data-event-7="Submitted the remaining /examples/concurrent page." data-event-8="Completed /examples/concurrent; its cycle back to /tutorial is already discovered.">
+              <p>Using two request slots, advance one event and watch discovered, queued, running, and fetched URLs change.</p>
+              <div class="state-board" data-initial="The home page is already discovered and queued. Submit it to begin." data-finished="All discovered pages have finished; the crawler can stop." data-event-1="Submitted / as the first in-flight request; discovered does not change." data-event-2="Completed / and discovered two new same-site links. They are marked discovered before they run." data-event-3="Submitted /tutorial and /reference together because two slots are available." data-event-4="Completed /reference first; two example pages enter the queue and discovered grows immediately." data-event-5="Immediately submitted /examples/basic into the freed slot while /tutorial is still running." data-event-6="Completed /tutorial and /examples/basic; duplicate and already-discovered links add no new work." data-event-7="Submitted the remaining /examples/concurrent page." data-event-8="Completed /examples/concurrent; its cycle back to /tutorial is already discovered.">
+                <div><span class="state-label">Discovered</span><div class="chips" id="state-discovered"></div></div>
                 <div><span class="state-label">Queued</span><div class="chips" id="state-queued"></div></div>
                 <div><span class="state-label">Running</span><div class="chips" id="state-running"></div></div>
                 <div><span class="state-label">Fetched</span><div class="chips" id="state-fetched"></div></div>
@@ -312,7 +378,7 @@ for task in done_tasks:
             <article class="lab-card">
               <div class="tag">Lab 3 · Resilience</div>
               <h3>Combine timeout and retry</h3>
-              <p>Conceptual extension: combine the two separate runnable lessons. Set latency and temporary failures to predict an eventual request outcome.</p>
+              <p>Post-lesson design lab: combine the two separate runnable lessons. Set latency and temporary failures to predict an eventual request outcome before implementing it in a crawler.</p>
               <div class="resilience-lab" data-success="Success" data-timeout="Timed out: page latency exceeds the per-attempt budget." data-exhausted="Retries exhausted: the request still fails after 3 attempts.">
                 <label>Timeout budget: <strong id="timeout-value">3</strong> ticks
                   <input id="timeout-budget" type="range" min="1" max="6" value="3">
@@ -324,7 +390,7 @@ for task in done_tasks:
                   <input id="temporary-failures" type="range" min="0" max="4" value="1">
                 </label>
                 <p class="result" id="resilience-result" aria-live="polite"></p>
-                <p class="micro-note">This composition is not implemented in the crawler files yet. Model: up to 3 attempts with backoff delays of 1 then 2 ticks.</p>
+                <p class="micro-note">Model: up to 3 attempts with backoff delays of 1 then 2 ticks. Read <code>lesson_timeout.py</code> and <code>lesson_retry.py</code>, then sketch how you would compose them.</p>
               </div>
             </article>
           </div>
@@ -344,6 +410,10 @@ for task in done_tasks:
                 <button class="choice" data-correct="false">Async code cannot return HTML text.</button>
               </div>
               <div class="feedback"></div>
+              <details class="model-answer">
+                <summary>Explain in your own words</summary>
+                <p>Asyncio needs each task to yield at <code>await</code>. A blocking call keeps the event loop thread busy, so unrelated tasks cannot make progress.</p>
+              </details>
             </article>
             <article class="quiz" data-success="Correct. A separate page/depth limit is needed for total growth." data-retry="Try again: in-flight work and discovered work are different states.">
               <p>What does <code>max_concurrency=2</code> limit?</p>
@@ -352,6 +422,10 @@ for task in done_tasks:
                 <button class="choice" data-correct="true">The active asynchronous fetch operations.</button>
               </div>
               <div class="feedback"></div>
+              <details class="model-answer">
+                <summary>Explain in your own words</summary>
+                <p>It limits active fetches, not total discovered pages. A crawler may still discover many URLs and hold them in the waiting queue.</p>
+              </details>
             </article>
             <article class="quiz" data-success="Correct. A Future is a handle for submitted work and carries its result or failure." data-retry="Try again: submit does not immediately return the downloaded HTML.">
               <p>What does <code>pool.submit(crawl_page, url)</code> return immediately?</p>
@@ -360,6 +434,10 @@ for task in done_tasks:
                 <button class="choice" data-correct="true">A <code>Future</code> representing scheduled work.</button>
               </div>
               <div class="feedback"></div>
+              <details class="model-answer">
+                <summary>Explain in your own words</summary>
+                <p>A <code>Future</code> lets the coordinator remember scheduled work, wait for completion, and call <code>result()</code> to surface unexpected worker exceptions.</p>
+              </details>
             </article>
             <article class="quiz" data-success="Correct. Awaiting observes completion and allows cleanup to run." data-retry="Try again: cancellation is a request, not instant cleanup.">
               <p>After cancelling pending tasks, why await them?</p>
@@ -368,6 +446,10 @@ for task in done_tasks:
                 <button class="choice" data-correct="false">To make them fetch the page anyway.</button>
               </div>
               <div class="feedback"></div>
+              <details class="model-answer">
+                <summary>Explain in your own words</summary>
+                <p>Cancellation is delivered into the coroutine. Awaiting gives cancelled tasks a chance to run cleanup and lets the caller observe their final state.</p>
+              </details>
             </article>
           </div>
         </div>

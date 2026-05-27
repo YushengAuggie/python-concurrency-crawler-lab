@@ -6,6 +6,9 @@ on:
       - main
     paths:
       - "docs/**"
+      - "*.py"
+      - "lessons/**/*.py"
+      - "scripts/generate_site_sources.py"
       - ".github/workflows/pages.yml"
   workflow_dispatch:
 
@@ -32,6 +35,9 @@ jobs:
         uses: actions/configure-pages@v5
         with:
           enablement: true
+
+      - name: Generate in-site source reader payload
+        run: python3 scripts/generate_site_sources.py
 
       - name: Upload static site
         uses: actions/upload-pages-artifact@v3

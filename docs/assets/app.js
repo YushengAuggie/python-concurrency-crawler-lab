@@ -1,30 +1,75 @@
 const durations = [4, 3, 5, 2, 4];
 const crawlStates = [
-  { queued: ["/"], running: [], fetched: [] },
-  { queued: [], running: ["/"], fetched: [] },
-  { queued: ["/tutorial", "/reference"], running: [], fetched: ["/"] },
-  { queued: [], running: ["/tutorial", "/reference"], fetched: ["/"] },
+  { discovered: ["/"], queued: ["/"], running: [], fetched: [] },
+  { discovered: ["/"], queued: [], running: ["/"], fetched: [] },
   {
+    discovered: ["/", "/tutorial", "/reference"],
+    queued: ["/tutorial", "/reference"],
+    running: [],
+    fetched: ["/"],
+  },
+  {
+    discovered: ["/", "/tutorial", "/reference"],
+    queued: [],
+    running: ["/tutorial", "/reference"],
+    fetched: ["/"],
+  },
+  {
+    discovered: [
+      "/",
+      "/tutorial",
+      "/reference",
+      "/examples/basic",
+      "/examples/concurrent",
+    ],
     queued: ["/examples/basic", "/examples/concurrent"],
     running: ["/tutorial"],
     fetched: ["/", "/reference"],
   },
   {
+    discovered: [
+      "/",
+      "/tutorial",
+      "/reference",
+      "/examples/basic",
+      "/examples/concurrent",
+    ],
     queued: ["/examples/concurrent"],
     running: ["/tutorial", "/examples/basic"],
     fetched: ["/", "/reference"],
   },
   {
+    discovered: [
+      "/",
+      "/tutorial",
+      "/reference",
+      "/examples/basic",
+      "/examples/concurrent",
+    ],
     queued: ["/examples/concurrent"],
     running: [],
     fetched: ["/", "/reference", "/tutorial", "/examples/basic"],
   },
   {
+    discovered: [
+      "/",
+      "/tutorial",
+      "/reference",
+      "/examples/basic",
+      "/examples/concurrent",
+    ],
     queued: [],
     running: ["/examples/concurrent"],
     fetched: ["/", "/reference", "/tutorial", "/examples/basic"],
   },
   {
+    discovered: [
+      "/",
+      "/tutorial",
+      "/reference",
+      "/examples/basic",
+      "/examples/concurrent",
+    ],
     queued: [],
     running: [],
     fetched: [
@@ -41,6 +86,7 @@ function renderTimeline() {
   const slider = document.querySelector("#concurrency");
   const timeline = document.querySelector("#timeline");
   const metric = document.querySelector("#elapsed");
+  const insight = document.querySelector("#timeline-insight");
   if (!slider || !timeline || !metric) {
     return;
   }
@@ -85,6 +131,11 @@ function renderTimeline() {
   }
 
   metric.textContent = `${totalTime} ${timeLabel}`;
+  if (insight) {
+    insight.textContent = lab.dataset.insight
+      .replace("{concurrency}", String(concurrency))
+      .replace("{total}", String(totalTime));
+  }
 }
 
 function wireQuizzes() {
@@ -153,6 +204,98 @@ function wireCodeStudio() {
   });
 }
 
+function wireSourceBrowser() {
+  const select = document.querySelector("#source-file-select");
+  const code = document.querySelector("#source-code");
+  const meta = document.querySelector("#source-meta");
+  const focus = document.querySelector("#source-focus");
+  const sourceLink = document.querySelector("#source-github-link");
+  const sourceFiles = window.CRAWLER_SOURCE_FILES || {};
+  if (!select || !code || !meta || !focus) {
+    return;
+  }
+
+  const parseHighlightedLines = (highlightText) => {
+    const highlightedLines = new Set();
+    highlightText
+      .split(",")
+      .map((range) => range.trim())
+      .filter(Boolean)
+      .forEach((range) => {
+        const [startText, endText] = range.split("-");
+        const startLine = Number(startText);
+        const endLine = Number(endText || startText);
+        for (let line = startLine; line <= endLine; line += 1) {
+          highlightedLines.add(line);
+        }
+      });
+    return highlightedLines;
+  };
+
+  const renderCodeLines = (sourceText, highlightedLines) => {
+    code.textContent = "";
+    const sourceLines = sourceText.endsWith("\n")
+      ? sourceText.slice(0, -1).split("\n")
+      : sourceText.split("\n");
+    sourceLines.forEach((lineText, index) => {
+      const lineNumber = index + 1;
+      const row = document.createElement("span");
+      row.className = "source-line";
+      if (highlightedLines.has(lineNumber)) {
+        row.classList.add("highlighted");
+      }
+
+      const gutter = document.createElement("span");
+      gutter.className = "source-line-number";
+      gutter.textContent = String(lineNumber);
+
+      const line = document.createElement("span");
+      line.className = "source-line-code";
+      line.textContent = lineText || " ";
+
+      row.append(gutter, line);
+      code.appendChild(row);
+    });
+  };
+
+  const renderSource = () => {
+    const selectedOption = select.options[select.selectedIndex];
+    const sourcePath = select.value;
+    const sourceText = sourceFiles[sourcePath] || "";
+    const lineCount = sourceText
+      ? sourceText.split("\n").length - (sourceText.endsWith("\n") ? 1 : 0)
+      : 0;
+    const highlightText =
+      select.dataset.activeHighlight || selectedOption.dataset.highlight || "";
+    const highlightedLines = parseHighlightedLines(highlightText);
+    if (sourceText) {
+      renderCodeLines(sourceText, highlightedLines);
+    } else {
+      code.textContent = select.dataset.missing;
+    }
+    meta.textContent = select.dataset.meta
+      .replace("{file}", sourcePath)
+      .replace("{lines}", String(lineCount));
+    focus.textContent = selectedOption.dataset.focus || "";
+    if (sourceLink) {
+      sourceLink.href = `https://github.com/YushengAuggie/python-concurrency-crawler-lab/blob/main/${sourcePath}`;
+    }
+  };
+
+  select.addEventListener("change", () => {
+    delete select.dataset.activeHighlight;
+    renderSource();
+  });
+  document.querySelectorAll("[data-source-target]").forEach((jump) => {
+    jump.addEventListener("click", () => {
+      select.value = jump.dataset.sourceTarget;
+      select.dataset.activeHighlight = jump.dataset.sourceHighlight || "";
+      renderSource();
+    });
+  });
+  renderSource();
+}
+
 function wireLessonLinks() {
   const openLesson = () => {
     if (!window.location.hash) {
@@ -199,6 +342,7 @@ function wireStateLab() {
 
   const renderState = () => {
     const state = crawlStates[stateIndex];
+    renderChips(document.querySelector("#state-discovered"), state.discovered);
     renderChips(document.querySelector("#state-queued"), state.queued);
     renderChips(document.querySelector("#state-running"), state.running);
     renderChips(document.querySelector("#state-fetched"), state.fetched);
@@ -262,6 +406,7 @@ document.addEventListener("DOMContentLoaded", () => {
   renderTimeline();
   wireQuizzes();
   wireCodeStudio();
+  wireSourceBrowser();
   wireLessonLinks();
   wireStateLab();
   renderResilienceLab();

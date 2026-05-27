@@ -18,7 +18,7 @@ Open the visual, interactive course site:
 
 [https://yushengauggie.github.io/python-concurrency-crawler-lab/](https://yushengauggie.github.io/python-concurrency-crawler-lab/)
 
-The website includes clickable lesson modules, an in-page code studio, visual diagrams, concurrency/state/reliability labs, and self-check questions. The runnable Python files in this repository remain the source of truth.
+The website includes clickable lesson modules, an in-page code studio with full source files, visual diagrams, concurrency/state/reliability labs, and self-check questions. The runnable Python files in this repository remain the source of truth.
 
 ## Quick Start
 
@@ -45,6 +45,7 @@ python-concurrency-crawler-lab/
 ├── test_lessons.py           # Progressive lesson tests
 ├── lessons/                  # Runnable timeout/retry/semaphore/cancellation lessons
 ├── docs/                     # Static interactive GitHub Pages course site
+├── scripts/generate_site_sources.py
 ├── scripts/check_docs_sync.py
 └── README.zh-CN.md           # Chinese translation
 ```
@@ -278,3 +279,10 @@ After these runnable lessons, extend the crawler with a maximum-page limit and t
 ## Documentation Languages
 
 The English and Chinese main guides, progressive lesson guides, and website pages are maintained together. A GitHub Actions check fails a pull request if only one language version in a pair is modified or if language-switch links are removed. When changing concepts, diagrams, commands, or examples, update both language versions in the same pull request.
+
+The website source reader is generated from the runnable Python files:
+
+```bash
+python3 scripts/generate_site_sources.py
+python3 scripts/check_docs_sync.py
+```

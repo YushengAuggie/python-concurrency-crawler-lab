@@ -217,7 +217,7 @@ h1 {
 
 .cards {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
   gap: 16px;
 }
 
@@ -393,6 +393,88 @@ pre {
   text-decoration: none;
 }
 
+.source-browser {
+  margin-top: 18px;
+  border: 1px solid var(--line);
+  border-radius: 18px;
+  background: var(--surface);
+}
+
+.source-browser-header {
+  display: flex;
+  align-items: start;
+  justify-content: space-between;
+  gap: 18px;
+  padding: 20px 20px 0;
+}
+
+.source-browser h3 {
+  margin: 6px 0 4px;
+  font-size: 1.35rem;
+}
+
+.source-browser p {
+  margin: 0;
+  color: var(--muted);
+}
+
+.source-picker {
+  display: grid;
+  min-width: 280px;
+  gap: 7px;
+  color: var(--muted);
+  font-size: 0.9rem;
+  font-weight: 650;
+}
+
+.source-picker select {
+  width: 100%;
+  padding: 9px 10px;
+  border: 1px solid var(--line);
+  border-radius: 9px;
+  color: var(--ink);
+  background: white;
+  font: inherit;
+}
+
+.source-browser .code-note {
+  padding: 14px 20px 0;
+}
+
+.source-pre {
+  max-height: 620px;
+  margin: 16px 20px 18px;
+  padding: 0;
+}
+
+.source-pre code {
+  display: block;
+  min-width: max-content;
+  padding: 12px 0;
+}
+
+.source-line {
+  display: grid;
+  grid-template-columns: 4.2rem 1fr;
+  min-height: 1.45rem;
+  white-space: pre;
+}
+
+.source-line.highlighted {
+  background: rgba(241, 198, 122, 0.16);
+}
+
+.source-line-number {
+  padding: 0 14px;
+  color: #7fa096;
+  text-align: right;
+  user-select: none;
+}
+
+.source-line-code {
+  padding-right: 18px;
+}
+
 .labs {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -522,6 +604,7 @@ input[type="range"] {
 }
 
 .small-button {
+  display: inline-block;
   cursor: pointer;
   padding: 8px 13px;
   border: 1px solid var(--line);
@@ -529,6 +612,7 @@ input[type="range"] {
   color: var(--ink);
   background: white;
   font-weight: 650;
+  text-decoration: none;
 }
 
 .small-button.primary {
@@ -630,6 +714,25 @@ input[type="range"] {
   font-size: 0.9rem;
 }
 
+.model-answer {
+  margin-top: 12px;
+  border-radius: 10px;
+  background: #f2f3ee;
+}
+
+.model-answer summary {
+  padding: 10px 12px;
+  color: var(--accent-dark);
+  font-size: 0.9rem;
+}
+
+.model-answer p {
+  margin: 0;
+  padding: 0 12px 12px;
+  color: var(--muted);
+  font-weight: 400;
+}
+
 footer {
   margin-top: 56px;
   padding: 30px 0 54px;
@@ -648,5 +751,13 @@ footer {
 
   .hero {
     padding-top: 28px;
+  }
+
+  .source-browser-header {
+    display: grid;
+  }
+
+  .source-picker {
+    min-width: 0;
   }
 }

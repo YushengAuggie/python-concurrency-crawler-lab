@@ -19,6 +19,7 @@ REQUIRED_LINK_TARGETS = {
     Path("docs/index.html"): 'href="zh-CN.html"',
     Path("docs/zh-CN.html"): 'href="index.html"',
 }
+GENERATED_SOURCE_PAYLOAD = Path("docs/assets/source-files.js")
 
 
 def check_language_links() -> list[str]:
@@ -61,6 +62,30 @@ def check_paired_changes(base_ref: str) -> list[str]:
     return errors
 
 
+def check_generated_source_payload() -> list[str]:
+    """Require the website source-code payload to match repository files."""
+    repository_root = Path(__file__).resolve().parents[1]
+    if str(repository_root) not in sys.path:
+        sys.path.insert(0, str(repository_root))
+
+    import scripts.generate_site_sources as source_generator
+
+    if not GENERATED_SOURCE_PAYLOAD.exists():
+        return [f"Missing generated source payload: {GENERATED_SOURCE_PAYLOAD}"]
+
+    expected_payload = source_generator.render_javascript(
+        source_generator.build_payload()
+    )
+    actual_payload = GENERATED_SOURCE_PAYLOAD.read_text(encoding="utf-8")
+    if actual_payload != expected_payload:
+        return [
+            "docs/assets/source-files.js is out of date. Run "
+            "python3 scripts/generate_site_sources.py."
+        ]
+
+    return []
+
+
 def main() -> int:
     """Run local link checks and optional pull-request synchronization checks."""
     parser = ArgumentParser()
@@ -71,6 +96,7 @@ def main() -> int:
     arguments = parser.parse_args()
 
     errors = check_language_links()
+    errors.extend(check_generated_source_payload())
     if arguments.base_ref:
         errors.extend(check_paired_changes(arguments.base_ref))
 

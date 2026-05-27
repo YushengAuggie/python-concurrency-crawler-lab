@@ -9,32 +9,42 @@ from shared import HOME_URL
 from synchronous_crawlers import SequentialWebCrawler, ThreadPoolWebCrawler
 
 
-def measure_run(label: str, crawler_run: Callable[[], list[str]]) -> None:
+def measure_run(label: str, crawler_run: Callable[[], list[str]]) -> list[str]:
     """Run a blocking crawler and print its elapsed time and discovered pages."""
     started_at = perf_counter()
     pages = crawler_run()
     elapsed_seconds = perf_counter() - started_at
     print(f"{label:<12} {elapsed_seconds:.3f}s  {len(pages)} pages")
+    return pages
 
 
-async def measure_async_run() -> None:
+async def measure_async_run() -> list[str]:
     """Run the async crawler and print its elapsed time and discovered pages."""
     started_at = perf_counter()
     pages = await AsyncWebCrawler(HOME_URL, max_concurrency=2).run()
     elapsed_seconds = perf_counter() - started_at
     print(f"{'Asyncio':<12} {elapsed_seconds:.3f}s  {len(pages)} pages")
+    return pages
 
 
 async def main() -> None:
     """Compare the crawler styles under the same simulated network delays."""
     print("Crawler       Time    Result")
     print("----------------------------")
-    measure_run("Sequential", lambda: SequentialWebCrawler(HOME_URL).run())
-    measure_run(
+    sequential_pages = measure_run(
+        "Sequential",
+        lambda: SequentialWebCrawler(HOME_URL).run(),
+    )
+    thread_pool_pages = measure_run(
         "Thread pool",
         lambda: ThreadPoolWebCrawler(HOME_URL, max_workers=2).run(),
     )
-    await measure_async_run()
+    async_pages = await measure_async_run()
+
+    all_crawlers_found_same_pages = (
+        set(sequential_pages) == set(thread_pool_pages) == set(async_pages)
+    )
+    print(f"Same pages:   {all_crawlers_found_same_pages}")
 
 
 if __name__ == "__main__":

@@ -6,6 +6,7 @@
     <title>Python 并发爬虫学习实验室</title>
     <meta name="description" content="通过离线网页爬虫学习线程池与 asyncio。">
     <link rel="stylesheet" href="assets/styles.css">
+    <script defer src="assets/source-files.js"></script>
     <script defer src="assets/app.js"></script>
   </head>
   <body>
@@ -68,11 +69,17 @@
               <p>在加入并发前，先理解队列、URL 去重、成功页面与失败页面。</p>
               <span class="card-action">开始这一模块 &rarr;</span>
             </a>
-            <a class="card" href="#lesson-models">
-              <div class="tag">比较</div>
-              <h3>Threads 与 asyncio</h3>
-              <p>观察阻塞式 worker thread 与让出控制权的 event loop task 有何差别。</p>
-              <span class="card-action">比较两种模型 &rarr;</span>
+            <a class="card" href="#lesson-threadpool">
+              <div class="tag">线程</div>
+              <h3>Future 与线程池</h3>
+              <p>把阻塞式抓取交给 worker threads，并限制同时提交的工作量。</p>
+              <span class="card-action">学习线程池 &rarr;</span>
+            </a>
+            <a class="card" href="#lesson-asyncio">
+              <div class="tag">Asyncio</div>
+              <h3>Task 与事件循环</h3>
+              <p>观察 coroutine 如何在 <code>await</code> 时让出控制权，让一个 event loop 协调多个等待。</p>
+              <span class="card-action">学习 asyncio &rarr;</span>
             </a>
             <a class="card" href="#lesson-reliability">
               <div class="tag">可靠性</div>
@@ -82,6 +89,9 @@
             </a>
           </div>
           <nav class="lesson-shortcuts" aria-label="可靠性课程快捷链接">
+            <a href="#lesson-threadpool">Thread pool</a>
+            <a href="#lesson-asyncio">Asyncio</a>
+            <a href="#lesson-reliability">Timeout</a>
             <a href="#lesson-retry">Retry</a>
             <a href="#lesson-semaphore">Semaphore</a>
             <a href="#lesson-cancellation">Cancellation</a>
@@ -113,34 +123,59 @@
                     <p>先预测抓取顺序，再运行基线版本验证你的判断。</p>
                     <pre><code>python3 synchronous_crawlers.py
 python3 -m unittest -v test_crawlers</code></pre>
+                    <p><a class="small-button" href="#source-browser" data-source-target="synchronous_crawlers.py" data-source-highlight="34-40">打开 sequential run loop</a></p>
                   </div>
                 </div>
                 <p class="challenge"><strong>自查：</strong>为什么 URL 应在入队时就被标记为 discovered，而不是抓取完成以后？</p>
               </div>
             </details>
-            <details id="lesson-models">
-              <summary><span class="lesson-number">01</span> Futures、Tasks 与等待进展</summary>
+            <details id="lesson-threadpool">
+              <summary><span class="lesson-number">01</span> Thread pool、Future 与等待进展</summary>
               <div class="lesson-body">
                 <div class="lesson-grid">
                   <div>
-                    <div class="tag">比较</div>
-                    <p>线程池在线程中运行阻塞抓取函数并返回 <code>Future</code> 句柄。Asyncio 调度会在 <code>await</code> 时让出控制权的 <code>Task</code>。</p>
-                    <p>两个版本都会限制正在执行的工作量，并在第一个操作完成时继续推进。</p>
+                    <div class="tag">学习</div>
+                    <p>线程池会在线程中运行阻塞式抓取函数。<code>submit()</code> 立即返回 <code>Future</code>，它是一个指向“可能还在运行的任务”的句柄。</p>
+                    <p>Crawler 保存 pending futures，知道哪些工作正在进行；等第一个完成后调用 <code>result()</code> 观察异常，再提交更多 URL。</p>
                   </div>
                   <div>
                     <div class="tag">运行</div>
                     <pre><code>python3 compare_examples.py
 
-# 找出对应思想：
-wait(..., FIRST_COMPLETED)
+# 阅读：
+ThreadPoolWebCrawler.run()
+wait(..., FIRST_COMPLETED)</code></pre>
+                    <p><a class="small-button" href="#source-browser" data-source-target="synchronous_crawlers.py" data-source-highlight="76-108">打开 Future/wait loop</a></p>
+                  </div>
+                </div>
+                <p class="challenge"><strong>自查：</strong>为什么 crawler 只按照空闲 worker slot 提交任务，而不是把所有发现的 URL 一次性提交？</p>
+              </div>
+            </details>
+            <details id="lesson-asyncio">
+              <summary><span class="lesson-number">02</span> Asyncio Task、await 与 event loop</summary>
+              <div class="lesson-body">
+                <div class="lesson-grid">
+                  <div>
+                    <div class="tag">学习</div>
+                    <p>Asyncio 会把 <code>Task</code> 调度到一个 event loop thread 上。Task 在 <code>await</code> 处暂停，让 event loop 有机会推进其他正在等待的任务。</p>
+                    <p>这个 async crawler 只在一个 coordinator 方法里更新共享状态；完成的 task 返回链接，由 coordinator 统一入队，所以不需要线程锁。</p>
+                  </div>
+                  <div>
+                    <div class="tag">运行</div>
+                    <pre><code>python3 async_crawler.py
+python3 compare_examples.py
+
+# 阅读：
+AsyncWebCrawler.run()
 asyncio.wait(..., FIRST_COMPLETED)</code></pre>
+                    <p><a class="small-button" href="#source-browser" data-source-target="async_crawler.py" data-source-highlight="31-65">打开 asyncio run loop</a></p>
                   </div>
                 </div>
                 <p class="challenge"><strong>自查：</strong>为什么并发完成顺序可能不同于顺序 BFS，即使所有可达 URL 最终仍会被找到？</p>
               </div>
             </details>
             <details id="lesson-reliability">
-              <summary><span class="lesson-number">02</span> Timeout：限制等待占用容量的时间</summary>
+              <summary><span class="lesson-number">03</span> Timeout：限制等待占用容量的时间</summary>
               <div class="lesson-body">
                 <div class="lesson-grid">
                   <div>
@@ -155,13 +190,14 @@ return await asyncio.wait_for(
     get_html_content_async(url),
     timeout=timeout_seconds,
 )</code></pre>
+                    <p><a class="small-button" href="#source-browser" data-source-target="lessons/lesson_timeout.py" data-source-highlight="11-19">打开 timeout 源码</a></p>
                   </div>
                 </div>
-                <p class="challenge"><strong>实验：</strong>将 timeout 调到低于模拟页面延迟。Crawler 应记录什么结果？</p>
+                <p class="challenge"><strong>实验：</strong>将 timeout 调到低于模拟页面延迟。<code>fetch_with_timeout()</code> 应返回什么结果？</p>
               </div>
             </details>
             <details id="lesson-retry">
-              <summary><span class="lesson-number">03</span> Retry with backoff：恢复但不过度请求</summary>
+              <summary><span class="lesson-number">04</span> Retry with backoff：恢复但不过度请求</summary>
               <div class="lesson-body">
                 <div class="lesson-grid">
                   <div>
@@ -175,13 +211,14 @@ return await asyncio.wait_for(
 delay_seconds = base_delay_seconds * (
     2 ** (attempt_number - 1)
 )</code></pre>
+                    <p><a class="small-button" href="#source-browser" data-source-target="lessons/lesson_retry.py" data-source-highlight="24-47">打开 retry 源码</a></p>
                   </div>
                 </div>
                 <p class="challenge"><strong>自查：</strong>为什么错误 URL 或权限失败通常不应该 retry？</p>
               </div>
             </details>
             <details id="lesson-semaphore">
-              <summary><span class="lesson-number">04</span> Semaphore：限制活跃异步请求</summary>
+              <summary><span class="lesson-number">05</span> Semaphore：限制活跃异步请求</summary>
               <div class="lesson-body">
                 <div class="lesson-grid">
                   <div>
@@ -194,13 +231,14 @@ delay_seconds = base_delay_seconds * (
 
 async with semaphore:
     await fetch_page()</code></pre>
+                    <p><a class="small-button" href="#source-browser" data-source-target="lessons/lesson_semaphore.py" data-source-highlight="22-37">打开 semaphore 源码</a></p>
                   </div>
                 </div>
                 <p class="challenge"><strong>自查：</strong>还需要什么单独的限制，才能避免巨大网站不断扩大抓取 frontier？</p>
               </div>
             </details>
             <details id="lesson-cancellation">
-              <summary><span class="lesson-number">05</span> Cancellation：停止并收集未完成 tasks</summary>
+              <summary><span class="lesson-number">06</span> Cancellation：停止并收集未完成 tasks</summary>
               <div class="lesson-body">
                 <div class="lesson-grid">
                   <div>
@@ -215,6 +253,7 @@ task.cancel()
 await asyncio.gather(
     task, return_exceptions=True
 )</code></pre>
+                    <p><a class="small-button" href="#source-browser" data-source-target="lessons/lesson_cancellation.py" data-source-highlight="22-37">打开 cancellation 源码</a></p>
                   </div>
                 </div>
                 <p class="challenge"><strong>自查：</strong>为什么创建 tasks 却没有最终 await 或 cancel 它们会有风险？</p>
@@ -228,7 +267,7 @@ await asyncio.gather(
         <div class="shell">
           <div class="eyebrow">代码阅读</div>
           <h2>不离开课程，也能阅读关键代码。</h2>
-          <p class="section-intro">切换文件，将每一个概念对应到真正可运行的实现。完整源码仍然保留在仓库中，方便你进一步实验。</p>
+          <p class="section-intro">先看带解释的关键片段，再直接在本页打开完整可运行源码。GitHub 是可选入口，不是学习过程中的必经跳转。</p>
           <div class="code-studio">
             <div class="code-tabs" role="tablist" aria-label="Crawler 源码片段">
               <button class="code-tab active" id="tab-shared" data-code-target="shared" role="tab" aria-controls="panel-shared" aria-selected="true" tabindex="0">shared.py</button>
@@ -269,7 +308,32 @@ done_tasks, pending_tasks = await asyncio.wait(
 for task in done_tasks:
     url, discovered_links = task.result()</code></pre>
             </article>
-            <a class="source-link" href="https://github.com/YushengAuggie/python-concurrency-crawler-lab">在 GitHub 打开完整源码 &rarr;</a>
+            <a class="source-link" href="#source-browser">在下方打开完整源码 &darr;</a>
+          </div>
+          <div class="source-browser" id="source-browser">
+            <div class="source-browser-header">
+              <div>
+                <div class="tag">完整源码阅读器</div>
+                <h3>在页面内阅读完整文件。</h3>
+                <p id="source-meta"></p>
+              </div>
+              <label class="source-picker">
+                选择文件
+                <select id="source-file-select" data-missing="源码数据缺失。请运行 python3 scripts/generate_site_sources.py。" data-meta="{file} · {lines} 行">
+                  <option value="shared.py" data-highlight="55-79,93-113" data-focus="重点：离线网站、阻塞 fetch、async fetch 与链接规范化。">shared.py</option>
+                  <option value="synchronous_crawlers.py" data-highlight="34-40,68-108" data-focus="重点：SequentialWebCrawler、ThreadPoolWebCrawler、Future、wait() 与锁保护的状态更新。">synchronous_crawlers.py</option>
+                  <option value="async_crawler.py" data-highlight="22-65" data-focus="重点：AsyncWebCrawler、create_task()、asyncio.wait() 与 coordinator 管理状态。">async_crawler.py</option>
+                  <option value="compare_examples.py" data-highlight="10-42" data-focus="重点：用同一次 crawl 对比 sequential、thread pool 与 asyncio。">compare_examples.py</option>
+                  <option value="lessons/lesson_timeout.py" data-highlight="11-19" data-focus="重点：用 wait_for() 限制一次 await。">lessons/lesson_timeout.py</option>
+                  <option value="lessons/lesson_retry.py" data-highlight="24-47" data-focus="重点：用指数退避处理暂时性失败。">lessons/lesson_retry.py</option>
+                  <option value="lessons/lesson_semaphore.py" data-highlight="22-37" data-focus="重点：用 semaphore 限制活跃 async 工作。">lessons/lesson_semaphore.py</option>
+                  <option value="lessons/lesson_cancellation.py" data-highlight="22-37" data-focus="重点：取消 tasks 并等待清理完成。">lessons/lesson_cancellation.py</option>
+                </select>
+              </label>
+            </div>
+            <p class="code-note" id="source-focus"></p>
+            <pre class="source-pre"><code id="source-code"></code></pre>
+            <a class="source-link" id="source-github-link" href="https://github.com/YushengAuggie/python-concurrency-crawler-lab">在 GitHub 打开当前文件 &rarr;</a>
           </div>
         </div>
       </section>
@@ -284,7 +348,7 @@ for task in done_tasks:
               <div class="tag">Lab 1 · 容量</div>
               <h3>让等待时间重叠</h3>
               <p>这里请求已经被预先知道。提高上限会重叠等待时间，而不会让单个页面自身变快。</p>
-              <div class="timeline-lab" data-slot-label="槽位" data-page-label="页面" data-time-label="个时间单位">
+              <div class="timeline-lab" data-slot-label="槽位" data-page-label="页面" data-time-label="个时间单位" data-insight="当活跃请求槽位为 {concurrency} 时，这五个已知等待会在 {total} 个时间单位后完成。下次移动滑块前，先预测这个数字。">
                 <label class="control">
                   活跃请求上限：
                   <input id="concurrency" type="range" min="1" max="5" value="2">
@@ -292,13 +356,15 @@ for task in done_tasks:
                 </label>
                 <div class="timeline" id="timeline" aria-live="polite"></div>
                 <p>模拟总耗时：<span class="metric" id="elapsed"></span></p>
+                <p class="micro-note" id="timeline-insight"></p>
               </div>
             </article>
             <article class="lab-card" id="state-lab">
               <div class="tag">Lab 2 · 状态</div>
               <h3>逐步执行一次 crawl</h3>
-              <p>使用两个请求槽位，每次推进一个事件，观察等待、运行和完成 URL 的变化。</p>
-              <div class="state-board" data-initial="首页已在队列中。提交它来开始。" data-finished="所有发现的页面均已完成；crawler 现在可以停止。" data-event-1="提交 / 作为第一个正在执行的请求。" data-event-2="完成 /，并发现两个新的同站链接。" data-event-3="因为有两个空闲槽位，同时提交 /tutorial 和 /reference。" data-event-4="/reference 先完成；两个 example 页面进入队列。" data-event-5="立即把 /examples/basic 提交到释放的槽位，此时 /tutorial 仍在运行。" data-event-6="完成 /tutorial 与 /examples/basic；重复或已发现链接不会增加新工作。" data-event-7="提交最后的 /examples/concurrent 页面。" data-event-8="完成 /examples/concurrent；回到 /tutorial 的环路已经被 discovered。">
+              <p>使用两个请求槽位，每次推进一个事件，观察 discovered、等待、运行和完成 URL 的变化。</p>
+              <div class="state-board" data-initial="首页已经被标记为 discovered 并进入队列。提交它来开始。" data-finished="所有发现的页面均已完成；crawler 现在可以停止。" data-event-1="提交 / 作为第一个正在执行的请求；discovered 不变。" data-event-2="完成 /，并发现两个新的同站链接。它们在运行之前就已经被标记为 discovered。" data-event-3="因为有两个空闲槽位，同时提交 /tutorial 和 /reference。" data-event-4="/reference 先完成；两个 example 页面进入队列，discovered 立即增长。" data-event-5="立即把 /examples/basic 提交到释放的槽位，此时 /tutorial 仍在运行。" data-event-6="完成 /tutorial 与 /examples/basic；重复或已发现链接不会增加新工作。" data-event-7="提交最后的 /examples/concurrent 页面。" data-event-8="完成 /examples/concurrent；回到 /tutorial 的环路已经被 discovered。">
+                <div><span class="state-label">已发现</span><div class="chips" id="state-discovered"></div></div>
                 <div><span class="state-label">等待</span><div class="chips" id="state-queued"></div></div>
                 <div><span class="state-label">运行</span><div class="chips" id="state-running"></div></div>
                 <div><span class="state-label">完成</span><div class="chips" id="state-fetched"></div></div>
@@ -312,7 +378,7 @@ for task in done_tasks:
             <article class="lab-card">
               <div class="tag">Lab 3 · 可靠性</div>
               <h3>组合 Timeout 与 Retry</h3>
-              <p>概念扩展：将两个独立的可运行课程组合起来。设定页面延迟与暂时失败次数，预测一次请求的最终结果。</p>
+              <p>课后设计实验：将两个独立的可运行课程组合起来。设定页面延迟与暂时失败次数，在真正实现前先预测请求的最终结果。</p>
               <div class="resilience-lab" data-success="成功" data-timeout="超时：页面延迟超过每次尝试的预算。" data-exhausted="重试用尽：请求在 3 次尝试后仍然失败。">
                 <label>Timeout 预算：<strong id="timeout-value">3</strong> ticks
                   <input id="timeout-budget" type="range" min="1" max="6" value="3">
@@ -324,7 +390,7 @@ for task in done_tasks:
                   <input id="temporary-failures" type="range" min="0" max="4" value="1">
                 </label>
                 <p class="result" id="resilience-result" aria-live="polite"></p>
-                <p class="micro-note">这个组合尚未在 crawler 文件中实现。模型：最多尝试 3 次，退避延迟依次为 1、2 ticks。</p>
+                <p class="micro-note">模型：最多尝试 3 次，退避延迟依次为 1、2 ticks。阅读 <code>lesson_timeout.py</code> 和 <code>lesson_retry.py</code> 后，试着画出组合方案。</p>
               </div>
             </article>
           </div>
@@ -344,6 +410,10 @@ for task in done_tasks:
                 <button class="choice" data-correct="false">异步代码不能返回 HTML 文本。</button>
               </div>
               <div class="feedback"></div>
+              <details class="model-answer">
+                <summary>用自己的话解释</summary>
+                <p>Asyncio 需要 task 在 <code>await</code> 处让出控制权。阻塞调用会占住 event loop 线程，导致其他 tasks 无法继续推进。</p>
+              </details>
             </article>
             <article class="quiz" data-success="正确。限制总增长还需要单独的页面数或深度限制。" data-retry="再想一下：在途工作和已发现工作是不同状态。">
               <p><code>max_concurrency=2</code> 限制的是什么？</p>
@@ -352,6 +422,10 @@ for task in done_tasks:
                 <button class="choice" data-correct="true">同时活跃的异步抓取操作。</button>
               </div>
               <div class="feedback"></div>
+              <details class="model-answer">
+                <summary>用自己的话解释</summary>
+                <p>它限制的是活跃 fetch 数量，不是已发现页面总数。Crawler 仍可能发现很多 URL，并把它们保存在等待队列中。</p>
+              </details>
             </article>
             <article class="quiz" data-success="正确。Future 是已提交工作的句柄，并承载结果或失败。" data-retry="再想一下：submit 并不会立即返回下载完成的 HTML。">
               <p><code>pool.submit(crawl_page, url)</code> 会立即返回什么？</p>
@@ -360,6 +434,10 @@ for task in done_tasks:
                 <button class="choice" data-correct="true">表示已调度工作的 <code>Future</code>。</button>
               </div>
               <div class="feedback"></div>
+              <details class="model-answer">
+                <summary>用自己的话解释</summary>
+                <p><code>Future</code> 让 coordinator 记住已提交工作，等待它完成，并通过 <code>result()</code> 暴露 worker 中的意外异常。</p>
+              </details>
             </article>
             <article class="quiz" data-success="正确。Await 可以观察完成状态并让清理逻辑执行。" data-retry="再想一下：cancellation 是请求停止，而不是立即清理完成。">
               <p>取消 pending tasks 后，为什么还需要 await 它们？</p>
@@ -368,6 +446,10 @@ for task in done_tasks:
                 <button class="choice" data-correct="false">让它们无论如何都继续抓取页面。</button>
               </div>
               <div class="feedback"></div>
+              <details class="model-answer">
+                <summary>用自己的话解释</summary>
+                <p>Cancellation 会被送进 coroutine 内部。继续 await 可以让 task 执行清理逻辑，也让调用方观察它们的最终状态。</p>
+              </details>
             </article>
           </div>
         </div>

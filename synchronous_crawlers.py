@@ -111,5 +111,8 @@ class ThreadPoolWebCrawler:
 
 
 if __name__ == "__main__":
-    print("Sequential crawl:", sorted(SequentialWebCrawler(HOME_URL).run()))
-    print("Thread-pool crawl:", sorted(ThreadPoolWebCrawler(HOME_URL).run()))
+    sequential_pages = SequentialWebCrawler(HOME_URL).run()
+    thread_pool_pages = ThreadPoolWebCrawler(HOME_URL).run()
+
+    print("Sequential crawl order:", sequential_pages)
+    print("Thread-pool fetched pages:", sorted(thread_pool_pages))
