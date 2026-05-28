@@ -1,6 +1,7 @@
 """Check that paired English and Chinese learning documents stay synchronized."""
 
 from argparse import ArgumentParser
+from html.parser import HTMLParser
 from pathlib import Path
 import subprocess
 import sys
@@ -20,6 +21,28 @@ REQUIRED_LINK_TARGETS = {
     Path("docs/zh-CN.html"): 'href="index.html"',
 }
 GENERATED_SOURCE_PAYLOAD = Path("docs/assets/source-files.js")
+
+
+class SourceHighlightParser(HTMLParser):
+    """Collect source-reader highlight ranges from the static course pages."""
+
+    def __init__(self) -> None:
+        super().__init__()
+        self.highlights: list[tuple[str, str, str]] = []
+
+    def handle_starttag(
+        self, tag: str, attributes: list[tuple[str, str | None]]
+    ) -> None:
+        attribute_map = dict(attributes)
+        source_path = attribute_map.get("data-source-path")
+        source_highlight = attribute_map.get("data-highlight")
+        if source_path and source_highlight:
+            self.highlights.append(("tree", source_path, source_highlight))
+
+        source_target = attribute_map.get("data-source-target")
+        target_highlight = attribute_map.get("data-source-highlight")
+        if source_target and target_highlight:
+            self.highlights.append(("jump", source_target, target_highlight))
 
 
 def check_language_links() -> list[str]:
@@ -86,6 +109,72 @@ def check_generated_source_payload() -> list[str]:
     return []
 
 
+def parse_highlight_range(range_text: str) -> list[tuple[int, int]]:
+    """Parse comma-separated source line ranges such as 8-16 or 42."""
+    parsed_ranges = []
+    for raw_range in range_text.split(","):
+        range_item = raw_range.strip()
+        if not range_item:
+            continue
+
+        start_text, separator, end_text = range_item.partition("-")
+        if not start_text.isdecimal() or (separator and not end_text.isdecimal()):
+            raise ValueError(f"Invalid line range: {range_item}")
+
+        start_line = int(start_text)
+        end_line = int(end_text) if separator else start_line
+        if start_line < 1 or end_line < start_line:
+            raise ValueError(f"Invalid line range: {range_item}")
+
+        parsed_ranges.append((start_line, end_line))
+
+    return parsed_ranges
+
+
+def collect_source_highlights(document_path: Path) -> list[tuple[str, str, str]]:
+    """Return all source-reader highlights from one HTML document."""
+    parser = SourceHighlightParser()
+    parser.feed(document_path.read_text(encoding="utf-8"))
+    return parser.highlights
+
+
+def check_source_highlights() -> list[str]:
+    """Verify source-reader highlights point at real lines and stay bilingual."""
+    errors = []
+    english_highlights = collect_source_highlights(Path("docs/index.html"))
+    chinese_highlights = collect_source_highlights(Path("docs/zh-CN.html"))
+    if english_highlights != chinese_highlights:
+        errors.append(
+            "docs/index.html and docs/zh-CN.html must use matching source "
+            "highlight ranges."
+        )
+
+    for document_path in (Path("docs/index.html"), Path("docs/zh-CN.html")):
+        for _source_kind, source_path, range_text in collect_source_highlights(
+            document_path
+        ):
+            code_path = Path(source_path)
+            if not code_path.exists():
+                errors.append(f"{document_path} highlights missing file {source_path}.")
+                continue
+
+            line_count = len(code_path.read_text(encoding="utf-8").splitlines())
+            try:
+                highlighted_ranges = parse_highlight_range(range_text)
+            except ValueError as error:
+                errors.append(f"{document_path} has {error} for {source_path}.")
+                continue
+
+            for start_line, end_line in highlighted_ranges:
+                if end_line > line_count:
+                    errors.append(
+                        f"{document_path} highlights {source_path}:{start_line}-"
+                        f"{end_line}, but the file has {line_count} lines."
+                    )
+
+    return errors
+
+
 def main() -> int:
     """Run local link checks and optional pull-request synchronization checks."""
     parser = ArgumentParser()
@@ -97,6 +186,7 @@ def main() -> int:
 
     errors = check_language_links()
     errors.extend(check_generated_source_payload())
+    errors.extend(check_source_highlights())
     if arguments.base_ref:
         errors.extend(check_paired_changes(arguments.base_ref))
 

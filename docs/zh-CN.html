@@ -190,7 +190,7 @@ return await asyncio.wait_for(
     get_html_content_async(url),
     timeout=timeout_seconds,
 )</code></pre>
-                    <p><a class="small-button" href="#source-browser" data-source-target="lessons/lesson_timeout.py" data-source-highlight="11-19">打开 timeout 源码</a></p>
+                    <p><a class="small-button" href="#source-browser" data-source-target="lessons/lesson_timeout.py" data-source-highlight="8-16">打开 timeout 源码</a></p>
                   </div>
                 </div>
                 <p class="challenge"><strong>实验：</strong>将 timeout 调到低于模拟页面延迟。<code>fetch_with_timeout()</code> 应返回什么结果？</p>
@@ -211,7 +211,7 @@ return await asyncio.wait_for(
 delay_seconds = base_delay_seconds * (
     2 ** (attempt_number - 1)
 )</code></pre>
-                    <p><a class="small-button" href="#source-browser" data-source-target="lessons/lesson_retry.py" data-source-highlight="24-47">打开 retry 源码</a></p>
+                    <p><a class="small-button" href="#source-browser" data-source-target="lessons/lesson_retry.py" data-source-highlight="27-45">打开 retry 源码</a></p>
                   </div>
                 </div>
                 <p class="challenge"><strong>自查：</strong>为什么错误 URL 或权限失败通常不应该 retry？</p>
@@ -231,7 +231,7 @@ delay_seconds = base_delay_seconds * (
 
 async with semaphore:
     await fetch_page()</code></pre>
-                    <p><a class="small-button" href="#source-browser" data-source-target="lessons/lesson_semaphore.py" data-source-highlight="22-37">打开 semaphore 源码</a></p>
+                    <p><a class="small-button" href="#source-browser" data-source-target="lessons/lesson_semaphore.py" data-source-highlight="13-36">打开 semaphore 源码</a></p>
                   </div>
                 </div>
                 <p class="challenge"><strong>自查：</strong>还需要什么单独的限制，才能避免巨大网站不断扩大抓取 frontier？</p>
@@ -253,7 +253,7 @@ task.cancel()
 await asyncio.gather(
     task, return_exceptions=True
 )</code></pre>
-                    <p><a class="small-button" href="#source-browser" data-source-target="lessons/lesson_cancellation.py" data-source-highlight="22-37">打开 cancellation 源码</a></p>
+                    <p><a class="small-button" href="#source-browser" data-source-target="lessons/lesson_cancellation.py" data-source-highlight="19-43">打开 cancellation 源码</a></p>
                   </div>
                 </div>
                 <p class="challenge"><strong>自查：</strong>为什么创建 tasks 却没有最终 await 或 cancel 它们会有风险？</p>
@@ -321,16 +321,16 @@ for task in done_tasks:
             <div class="source-browser-layout">
               <nav class="source-tree" aria-label="仓库源码文件">
                 <div class="tree-root">python-concurrency-crawler-lab/</div>
-                <button class="tree-file" type="button" data-source-path="shared.py" data-highlight="55-79,93-113" data-focus="重点：离线网站、阻塞 fetch、async fetch 与链接规范化。">shared.py</button>
-                <button class="tree-file" type="button" data-source-path="synchronous_crawlers.py" data-highlight="34-40,68-108" data-focus="重点：SequentialWebCrawler、ThreadPoolWebCrawler、Future、wait() 与锁保护的状态更新。">synchronous_crawlers.py</button>
+                <button class="tree-file" type="button" data-source-path="shared.py" data-highlight="13-56,71-80,102-125" data-focus="重点：离线网站、阻塞 fetch、async fetch 与链接规范化。">shared.py</button>
+                <button class="tree-file" type="button" data-source-path="synchronous_crawlers.py" data-highlight="34-40,58-74,76-108" data-focus="重点：SequentialWebCrawler、ThreadPoolWebCrawler、Future、wait() 与锁保护的状态更新。">synchronous_crawlers.py</button>
                 <button class="tree-file" type="button" data-source-path="async_crawler.py" data-highlight="22-65" data-focus="重点：AsyncWebCrawler、create_task()、asyncio.wait() 与 coordinator 管理状态。">async_crawler.py</button>
-                <button class="tree-file" type="button" data-source-path="compare_examples.py" data-highlight="10-42" data-focus="重点：用同一次 crawl 对比 sequential、thread pool 与 asyncio。">compare_examples.py</button>
+                <button class="tree-file" type="button" data-source-path="compare_examples.py" data-highlight="12-47" data-focus="重点：用同一次 crawl 对比 sequential、thread pool 与 asyncio。">compare_examples.py</button>
                 <details class="tree-folder" open>
                   <summary>lessons/</summary>
-                  <button class="tree-file nested" type="button" data-source-path="lessons/lesson_timeout.py" data-highlight="11-19" data-focus="重点：用 wait_for() 限制一次 await。">lesson_timeout.py</button>
-                  <button class="tree-file nested" type="button" data-source-path="lessons/lesson_retry.py" data-highlight="24-47" data-focus="重点：用指数退避处理暂时性失败。">lesson_retry.py</button>
-                  <button class="tree-file nested" type="button" data-source-path="lessons/lesson_semaphore.py" data-highlight="22-37" data-focus="重点：用 semaphore 限制活跃 async 工作。">lesson_semaphore.py</button>
-                  <button class="tree-file nested" type="button" data-source-path="lessons/lesson_cancellation.py" data-highlight="22-37" data-focus="重点：取消 tasks 并等待清理完成。">lesson_cancellation.py</button>
+                  <button class="tree-file nested" type="button" data-source-path="lessons/lesson_timeout.py" data-highlight="8-16" data-focus="重点：用 wait_for() 限制一次 await。">lesson_timeout.py</button>
+                  <button class="tree-file nested" type="button" data-source-path="lessons/lesson_retry.py" data-highlight="27-45" data-focus="重点：用指数退避处理暂时性失败。">lesson_retry.py</button>
+                  <button class="tree-file nested" type="button" data-source-path="lessons/lesson_semaphore.py" data-highlight="13-36" data-focus="重点：用 semaphore 限制活跃 async 工作。">lesson_semaphore.py</button>
+                  <button class="tree-file nested" type="button" data-source-path="lessons/lesson_cancellation.py" data-highlight="19-43" data-focus="重点：取消 tasks 并等待清理完成。">lesson_cancellation.py</button>
                 </details>
               </nav>
               <div class="source-viewer">
