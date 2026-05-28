@@ -205,15 +205,64 @@ function wireCodeStudio() {
 }
 
 function wireSourceBrowser() {
-  const select = document.querySelector("#source-file-select");
+  const browser = document.querySelector(".source-browser");
+  const treeButtons = Array.from(document.querySelectorAll("[data-source-path]"));
   const code = document.querySelector("#source-code");
   const meta = document.querySelector("#source-meta");
   const focus = document.querySelector("#source-focus");
   const sourceLink = document.querySelector("#source-github-link");
   const sourceFiles = window.CRAWLER_SOURCE_FILES || {};
-  if (!select || !code || !meta || !focus) {
+  if (!browser || !treeButtons.length || !code || !meta || !focus) {
     return;
   }
+
+  const pythonKeywords = new Set([
+    "and",
+    "as",
+    "async",
+    "await",
+    "break",
+    "class",
+    "continue",
+    "def",
+    "elif",
+    "else",
+    "except",
+    "finally",
+    "for",
+    "from",
+    "if",
+    "import",
+    "in",
+    "is",
+    "lambda",
+    "not",
+    "or",
+    "pass",
+    "raise",
+    "return",
+    "try",
+    "while",
+    "with",
+    "yield",
+  ]);
+  const pythonConstants = new Set(["False", "None", "True"]);
+  const pythonBuiltins = new Set([
+    "ConnectionError",
+    "Future",
+    "RuntimeError",
+    "ThreadPoolExecutor",
+    "ValueError",
+    "bool",
+    "dict",
+    "float",
+    "int",
+    "list",
+    "print",
+    "set",
+    "str",
+    "tuple",
+  ]);
 
   const parseHighlightedLines = (highlightText) => {
     const highlightedLines = new Set();
@@ -232,11 +281,123 @@ function wireSourceBrowser() {
     return highlightedLines;
   };
 
+  const appendToken = (container, text, className = "") => {
+    if (!text) {
+      return;
+    }
+    const token = document.createElement("span");
+    if (className) {
+      token.className = className;
+    }
+    token.textContent = text;
+    container.appendChild(token);
+  };
+
+  const appendHighlightedPython = (container, lineText, state) => {
+    let position = 0;
+
+    while (position < lineText.length) {
+      if (state.tripleQuote) {
+        const end = lineText.indexOf(state.tripleQuote, position);
+        if (end === -1) {
+          appendToken(container, lineText.slice(position), "token-string");
+          return;
+        }
+
+        appendToken(
+          container,
+          lineText.slice(position, end + state.tripleQuote.length),
+          "token-string",
+        );
+        position = end + state.tripleQuote.length;
+        state.tripleQuote = "";
+        continue;
+      }
+
+      const character = lineText[position];
+      const tripleQuote = lineText.slice(position, position + 3);
+      if (tripleQuote === '"""' || tripleQuote === "'''") {
+        const end = lineText.indexOf(tripleQuote, position + 3);
+        if (end === -1) {
+          appendToken(container, lineText.slice(position), "token-string");
+          state.tripleQuote = tripleQuote;
+          return;
+        }
+
+        appendToken(
+          container,
+          lineText.slice(position, end + 3),
+          "token-string",
+        );
+        position = end + 3;
+        continue;
+      }
+
+      if (character === "#") {
+        appendToken(container, lineText.slice(position), "token-comment");
+        return;
+      }
+
+      if (character === '"' || character === "'") {
+        let end = position + 1;
+        while (end < lineText.length) {
+          if (lineText[end] === "\\") {
+            end += 2;
+            continue;
+          }
+          if (lineText[end] === character) {
+            end += 1;
+            break;
+          }
+          end += 1;
+        }
+        appendToken(container, lineText.slice(position, end), "token-string");
+        position = end;
+        continue;
+      }
+
+      if (/[A-Za-z_]/.test(character)) {
+        let end = position + 1;
+        while (end < lineText.length && /[A-Za-z0-9_]/.test(lineText[end])) {
+          end += 1;
+        }
+        const word = lineText.slice(position, end);
+        let className = "";
+        if (pythonKeywords.has(word)) {
+          className = "token-keyword";
+        } else if (pythonConstants.has(word)) {
+          className = "token-constant";
+        } else if (pythonBuiltins.has(word)) {
+          className = "token-builtin";
+        } else if (word === "self") {
+          className = "token-self";
+        }
+        appendToken(container, word, className);
+        position = end;
+        continue;
+      }
+
+      if (/\d/.test(character)) {
+        let end = position + 1;
+        while (end < lineText.length && /[\d_.]/.test(lineText[end])) {
+          end += 1;
+        }
+        appendToken(container, lineText.slice(position, end), "token-number");
+        position = end;
+        continue;
+      }
+
+      appendToken(container, character);
+      position += 1;
+    }
+  };
+
   const renderCodeLines = (sourceText, highlightedLines) => {
     code.textContent = "";
     const sourceLines = sourceText.endsWith("\n")
       ? sourceText.slice(0, -1).split("\n")
       : sourceText.split("\n");
+    const syntaxState = { tripleQuote: "" };
     sourceLines.forEach((lineText, index) => {
       const lineNumber = index + 1;
       const row = document.createElement("span");
@@ -251,49 +412,60 @@ function wireSourceBrowser() {
 
       const line = document.createElement("span");
       line.className = "source-line-code";
-      line.textContent = lineText || " ";
+      if (lineText) {
+        appendHighlightedPython(line, lineText, syntaxState);
+      } else {
+        line.textContent = " ";
+      }
 
       row.append(gutter, line);
       code.appendChild(row);
     });
   };
 
-  const renderSource = () => {
-    const selectedOption = select.options[select.selectedIndex];
-    const sourcePath = select.value;
-    const sourceText = sourceFiles[sourcePath] || "";
+  const renderSource = (sourcePath, activeHighlight = "") => {
+    const selectedButton =
+      treeButtons.find((button) => button.dataset.sourcePath === sourcePath) ||
+      treeButtons[0];
+    const selectedPath = selectedButton.dataset.sourcePath;
+    const sourceText = sourceFiles[selectedPath] || "";
     const lineCount = sourceText
       ? sourceText.split("\n").length - (sourceText.endsWith("\n") ? 1 : 0)
       : 0;
-    const highlightText =
-      select.dataset.activeHighlight || selectedOption.dataset.highlight || "";
+    const highlightText = activeHighlight || selectedButton.dataset.highlight || "";
     const highlightedLines = parseHighlightedLines(highlightText);
+
+    treeButtons.forEach((button) => {
+      const active = button === selectedButton;
+      button.classList.toggle("active", active);
+      button.setAttribute("aria-current", active ? "true" : "false");
+    });
+
     if (sourceText) {
       renderCodeLines(sourceText, highlightedLines);
     } else {
-      code.textContent = select.dataset.missing;
+      code.textContent = browser.dataset.missing;
     }
-    meta.textContent = select.dataset.meta
-      .replace("{file}", sourcePath)
+    meta.textContent = browser.dataset.meta
+      .replace("{file}", selectedPath)
       .replace("{lines}", String(lineCount));
-    focus.textContent = selectedOption.dataset.focus || "";
+    focus.textContent = selectedButton.dataset.focus || "";
     if (sourceLink) {
-      sourceLink.href = `https://github.com/YushengAuggie/python-concurrency-crawler-lab/blob/main/${sourcePath}`;
+      sourceLink.href = `https://github.com/YushengAuggie/python-concurrency-crawler-lab/blob/main/${selectedPath}`;
     }
   };
 
-  select.addEventListener("change", () => {
-    delete select.dataset.activeHighlight;
-    renderSource();
+  treeButtons.forEach((button) => {
+    button.addEventListener("click", () => {
+      renderSource(button.dataset.sourcePath);
+    });
   });
   document.querySelectorAll("[data-source-target]").forEach((jump) => {
     jump.addEventListener("click", () => {
-      select.value = jump.dataset.sourceTarget;
-      select.dataset.activeHighlight = jump.dataset.sourceHighlight || "";
-      renderSource();
+      renderSource(jump.dataset.sourceTarget, jump.dataset.sourceHighlight || "");
     });
   });
-  renderSource();
+  renderSource(treeButtons[0].dataset.sourcePath);
 }
 
 function wireLessonLinks() {

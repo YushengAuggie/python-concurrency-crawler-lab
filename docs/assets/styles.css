@@ -401,10 +401,6 @@ pre {
 }
 
 .source-browser-header {
-  display: flex;
-  align-items: start;
-  justify-content: space-between;
-  gap: 18px;
   padding: 20px 20px 0;
 }
 
@@ -418,33 +414,102 @@ pre {
   color: var(--muted);
 }
 
-.source-picker {
+.source-browser-layout {
   display: grid;
-  min-width: 280px;
-  gap: 7px;
-  color: var(--muted);
-  font-size: 0.9rem;
-  font-weight: 650;
+  grid-template-columns: minmax(230px, 0.34fr) minmax(0, 1fr);
+  gap: 0;
+  margin-top: 18px;
+  border-top: 1px solid var(--line);
 }
 
-.source-picker select {
+.source-tree {
+  padding: 16px 12px;
+  border-right: 1px solid var(--line);
+  background: #f5f7f2;
+}
+
+.tree-root {
+  margin: 0 0 9px 7px;
+  color: var(--muted);
+  font-family: "SFMono-Regular", "Cascadia Code", Consolas, monospace;
+  font-size: 0.78rem;
+  font-weight: 700;
+}
+
+.tree-file {
+  display: block;
   width: 100%;
-  padding: 9px 10px;
-  border: 1px solid var(--line);
-  border-radius: 9px;
+  cursor: pointer;
+  margin: 2px 0;
+  padding: 7px 8px 7px 24px;
+  border: 0;
+  border-radius: 8px;
   color: var(--ink);
-  background: white;
-  font: inherit;
+  background: transparent;
+  font-family: "SFMono-Regular", "Cascadia Code", Consolas, monospace;
+  font-size: 0.8rem;
+  text-align: left;
+}
+
+.tree-file::before {
+  content: "py";
+  display: inline-block;
+  width: 18px;
+  margin-left: -20px;
+  color: #5b8d7c;
+  font-size: 0.62rem;
+  font-weight: 800;
+}
+
+.tree-file:hover,
+.tree-file:focus-visible,
+.tree-file.active {
+  background: var(--highlight);
+  color: var(--accent-dark);
+}
+
+.tree-file.active {
+  box-shadow: inset 3px 0 0 var(--accent);
+}
+
+.tree-file.nested {
+  padding-left: 38px;
+}
+
+.tree-file.nested::before {
+  margin-left: -20px;
+}
+
+.tree-folder {
+  overflow: visible;
+  margin: 6px 0 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+}
+
+.tree-folder summary {
+  padding: 7px 8px 7px 24px;
+  color: var(--muted);
+  font-family: "SFMono-Regular", "Cascadia Code", Consolas, monospace;
+  font-size: 0.8rem;
+  font-weight: 700;
+}
+
+.source-viewer {
+  min-width: 0;
 }
 
 .source-browser .code-note {
-  padding: 14px 20px 0;
+  padding: 16px 20px 0;
 }
 
 .source-pre {
   max-height: 620px;
   margin: 16px 20px 18px;
   padding: 0;
+  border: 1px solid rgba(127, 160, 150, 0.2);
+  background: #101c18;
 }
 
 .source-pre code {
@@ -461,7 +526,7 @@ pre {
 }
 
 .source-line.highlighted {
-  background: rgba(241, 198, 122, 0.16);
+  background: rgba(241, 198, 122, 0.14);
 }
 
 .source-line-number {
@@ -473,6 +538,30 @@ pre {
 
 .source-line-code {
   padding-right: 18px;
+}
+
+.token-keyword {
+  color: #78d0ff;
+  font-weight: 700;
+}
+
+.token-builtin,
+.token-self {
+  color: #f4c78a;
+}
+
+.token-constant,
+.token-number {
+  color: #b6e389;
+}
+
+.token-string {
+  color: #9de3be;
+}
+
+.token-comment {
+  color: #7fa096;
+  font-style: italic;
 }
 
 .labs {
@@ -753,11 +842,12 @@ footer {
     padding-top: 28px;
   }
 
-  .source-browser-header {
-    display: grid;
+  .source-browser-layout {
+    grid-template-columns: 1fr;
   }
 
-  .source-picker {
-    min-width: 0;
+  .source-tree {
+    border-right: 0;
+    border-bottom: 1px solid var(--line);
   }
 }

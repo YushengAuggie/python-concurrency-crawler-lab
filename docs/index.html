@@ -310,29 +310,34 @@ for task in done_tasks:
             </article>
             <a class="source-link" href="#source-browser">Open complete source below &darr;</a>
           </div>
-          <div class="source-browser" id="source-browser">
+          <div class="source-browser" id="source-browser" data-missing="Source payload is missing. Run python3 scripts/generate_site_sources.py." data-meta="{file} · {lines} lines">
             <div class="source-browser-header">
               <div>
                 <div class="tag">Full source reader</div>
                 <h3>Read complete files in place.</h3>
                 <p id="source-meta"></p>
               </div>
-              <label class="source-picker">
-                Choose a file
-                <select id="source-file-select" data-missing="Source payload is missing. Run python3 scripts/generate_site_sources.py." data-meta="{file} · {lines} lines">
-                  <option value="shared.py" data-highlight="55-79,93-113" data-focus="Focus: the offline website, blocking fetch, async fetch, and link normalization.">shared.py</option>
-                  <option value="synchronous_crawlers.py" data-highlight="34-40,68-108" data-focus="Focus: SequentialWebCrawler, ThreadPoolWebCrawler, Future, wait(), and the lock-protected state update.">synchronous_crawlers.py</option>
-                  <option value="async_crawler.py" data-highlight="22-65" data-focus="Focus: AsyncWebCrawler, create_task(), asyncio.wait(), and coordinator-owned state.">async_crawler.py</option>
-                  <option value="compare_examples.py" data-highlight="10-42" data-focus="Focus: measuring the same crawl through sequential, threaded, and asyncio implementations.">compare_examples.py</option>
-                  <option value="lessons/lesson_timeout.py" data-highlight="11-19" data-focus="Focus: bounding one await with wait_for().">lessons/lesson_timeout.py</option>
-                  <option value="lessons/lesson_retry.py" data-highlight="24-47" data-focus="Focus: retrying temporary failures with exponential backoff.">lessons/lesson_retry.py</option>
-                  <option value="lessons/lesson_semaphore.py" data-highlight="22-37" data-focus="Focus: limiting active async work with a semaphore.">lessons/lesson_semaphore.py</option>
-                  <option value="lessons/lesson_cancellation.py" data-highlight="22-37" data-focus="Focus: cancelling tasks and awaiting cleanup.">lessons/lesson_cancellation.py</option>
-                </select>
-              </label>
             </div>
-            <p class="code-note" id="source-focus"></p>
-            <pre class="source-pre"><code id="source-code"></code></pre>
+            <div class="source-browser-layout">
+              <nav class="source-tree" aria-label="Repository source files">
+                <div class="tree-root">python-concurrency-crawler-lab/</div>
+                <button class="tree-file" type="button" data-source-path="shared.py" data-highlight="55-79,93-113" data-focus="Focus: the offline website, blocking fetch, async fetch, and link normalization.">shared.py</button>
+                <button class="tree-file" type="button" data-source-path="synchronous_crawlers.py" data-highlight="34-40,68-108" data-focus="Focus: SequentialWebCrawler, ThreadPoolWebCrawler, Future, wait(), and the lock-protected state update.">synchronous_crawlers.py</button>
+                <button class="tree-file" type="button" data-source-path="async_crawler.py" data-highlight="22-65" data-focus="Focus: AsyncWebCrawler, create_task(), asyncio.wait(), and coordinator-owned state.">async_crawler.py</button>
+                <button class="tree-file" type="button" data-source-path="compare_examples.py" data-highlight="10-42" data-focus="Focus: measuring the same crawl through sequential, threaded, and asyncio implementations.">compare_examples.py</button>
+                <details class="tree-folder" open>
+                  <summary>lessons/</summary>
+                  <button class="tree-file nested" type="button" data-source-path="lessons/lesson_timeout.py" data-highlight="11-19" data-focus="Focus: bounding one await with wait_for().">lesson_timeout.py</button>
+                  <button class="tree-file nested" type="button" data-source-path="lessons/lesson_retry.py" data-highlight="24-47" data-focus="Focus: retrying temporary failures with exponential backoff.">lesson_retry.py</button>
+                  <button class="tree-file nested" type="button" data-source-path="lessons/lesson_semaphore.py" data-highlight="22-37" data-focus="Focus: limiting active async work with a semaphore.">lesson_semaphore.py</button>
+                  <button class="tree-file nested" type="button" data-source-path="lessons/lesson_cancellation.py" data-highlight="22-37" data-focus="Focus: cancelling tasks and awaiting cleanup.">lesson_cancellation.py</button>
+                </details>
+              </nav>
+              <div class="source-viewer">
+                <p class="code-note" id="source-focus"></p>
+                <pre class="source-pre"><code id="source-code"></code></pre>
+              </div>
+            </div>
             <a class="source-link" id="source-github-link" href="https://github.com/YushengAuggie/python-concurrency-crawler-lab">Open this file on GitHub &rarr;</a>
           </div>
         </div>
